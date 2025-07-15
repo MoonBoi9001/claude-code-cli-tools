@@ -1,134 +1,59 @@
 ## Quick Commands
 
-### Optimized Development Workflow
-
-The following 7-step workflow provides a complete development cycle from planning to deployment:
-
 1. **`/recap`** - Get overview of current work state and context
-2. **`/create-issue`** - Plan and document what needs to be done (auto-updates context)
+2. **`/create-issue`** - Plan and document what needs to be done (automatically updates session context)
 3. **`/branch <issue-number>`** - Create feature branch linked to issue
 4. **`/fix-issue <issue-number>`** - Implement solution with issue context
-5. **`/commit`** - Commit changes with smart messaging (auto-updates context)
-6. **`/close-issue <issue-number>`** - Close issue with commit reference
-7. **`/create-pr`** - Create pull request (auto-updates context)
-
-**Key Benefits:**
-- **Complete lifecycle management** from planning to review
-- **Automatic context preservation** - no manual session management needed
-- **Excellent development hygiene** - proper issue tracking and documentation
-- **Team collaboration** - clear audit trail and communication
+5. **`/commit`** - Commit changes with smart messaging (automatically updates session context)
+6. **`/create-pr`** - Create pull request (automatically updates session context)
+7. **`/close-issue <issue-number>`** - Close issue with commit reference
 
 **Utility Commands:**
-- **`/update-claude`** - Manually update SESSIONCONTEXT.md when needed
+8. **`/update-session`** - Manually update SESSIONCONTEXT.md. Note that `/update-session` is automatically run after `/create-issue`, `/commit` and `/create-pr`)
 
-### Auto-Commit Feature
-When you want Claude to automatically commit your changes with an appropriate message:
+### 1. Recap
+Quick load context into new claude session and get an overview of current work state and suggested next actions:
 
-`/commit`
-
-**Commit workflow:**
-1. Run `git diff` to analyze changes
-2. Automatically detect the commit type (feat/fix/docs/chore/refactor/test)
-3. Generate a descriptive commit message based on the changes
-4. **Automatically update session context** with commit details
-5. Include all changes in a single commit with:
-   - Main changes described in the commit message
-   - Session context updates included automatically
-   - Claude Code attribution footer
-6. Execute the commit
-
-Example usage:
-```
-Human: /commit
-Claude: [analyzes changes and creates commit]
-Commit: abc1234 - feat: Add new feature
-
-Updating session context with commit details...
-Session context updated with implementation progress.
-```
-
-**Prerequisites**:
-- Staged or unstaged changes to commit
-- Git repository initialized
-
-### Auto-PR Feature
-Create a pull request with generated title and comprehensive description, then automatically update session context:
-
-`/create-pr`
+`/recap`
 
 Claude will:
-1. Analyze branch changes and commit history vs the base branch
-2. Review all file changes to understand the full scope
-3. Generate a semantic PR title following conventional commit format
-4. Create PR via GitHub CLI with:
-   - Executive summary
-   - Motivation and context
-   - Categorized change list with type prefixes (feat/fix/docs/etc)
-   - Future improvement suggestions
-   - Potential issue identification/Risk assessment
-   - Notes for reviewers section
-5. **Automatically update session context** (runs `/update-claude`)
-6. **Commit session updates** to capture PR completion
-7. Return the PR URL and session update confirmation
+1. Review SESSIONCONTEXT.md
+2. Show current branch and commit status
+3. List recent commits and changes
+4. Display open issues with priorities
+5. Show uncommitted changes if any
+6. Suggest logical next actions based on context
+7. Provide session continuity information
 
 Example usage:
 ```
-Human: /create-pr
-Claude: Creating PR...
-PR created: https://github.com/user/repo/pull/123
-
-Updating session context...
-Session context updated with PR completion and next steps.
-Committed session updates.
-
-Work complete! PR ready for review.
+Human: /recap
+Claude: [displays current context summary and next action suggestions]
 ```
 
-**Enhanced Workflow**: The `/create-pr` command now provides complete closure by updating CLAUDE.md with:
-- PR creation details and URL
-- Work completion status
-- Suggested next steps or follow-up work
-- Updated technical decisions and insights
-
-Prerequisites:
-- GitHub CLI (`gh`) installed and authenticated
-- Feature branch (not main/master)
-
-### Update Claude Context
-Persist session context to CLAUDE.md for seamless session recovery:
-
-`/update-claude`
-
-Claude will:
-1. Review recent commits and changes in current session
-2. Analyze PR descriptions and comments
-3. Extract key decisions, implementations, and discoveries
-4. Update the "Session Context" section in CLAUDE.md
-5. Include:
-   - Current work summary
-   - Technical decisions made
-   - Issues discovered
-   - Next steps identified
-   - Important code changes
-
-**Auto-Update Integration:**
-- **Automatically runs after `/create-issue`** (captures issue details and planning)
-- **Automatically runs after `/commit`** (captures implementation changes)
-- **Automatically runs after `/create-pr`** (captures PR completion and next steps)
-
-**Manual Use Cases:**
-- **Before switching branches** or ending a session
-- **After major discoveries** or architectural decisions
-- **When context gets stale** or needs refreshing
-- **Mid-development insights** that should be preserved
-
-Example usage:
+Example output:
 ```
-Human: /update-claude
-Claude: [updates SESSIONCONTEXT.md with current session context]
+## Current Context
+- **Branch**: feature-branch (2 commits ahead of main)
+- **Last commit**: feat: Add user authentication
+- **Uncommitted changes**: None
+
+## Recent Activity (Last 3 commits)
+- abc123: feat: Add user authentication system
+- def456: fix: Resolve login validation issue
+- ghi789: docs: Update API documentation
+
+## Open Issues (3 total)
+**High Priority:**
+- #10: Implement payment processing
+- #11: Add user dashboard
+
+## Suggested Next Actions
+1. Continue work on issue #10 payment processing
+2. Create branch for user dashboard feature
 ```
 
-### Create Issue
+### 2. Create Issue
 Create GitHub issues with context-aware descriptions:
 
 `/create-issue`
@@ -151,10 +76,38 @@ Updating session context with issue details...
 Session context updated with new issue information.
 ```
 
-### Fix Issue with Code Generation
+### 3. Branch
+Create and switch to a new branch based on a GitHub issue:
+
+`/branch <issue-number>`
+
+Claude will:
+1. Fetch issue details from GitHub using the issue number
+2. Determine branch type from issue labels or title (feat/fix/docs/chore)
+3. Generate semantic branch name including issue number
+4. Create and switch to the new branch
+5. Update session context with issue information
+6. Handle edge cases (uncommitted changes, existing branches, etc...)
+
+Example usage:
+```
+Human: /branch 10
+Claude: Fetching issue #10: "Add user authentication system"
+Creating branch: feat/issue-10-user-authentication
+Switched to new branch 'feat/issue-10-user-authentication'
+Ready to work on: Add user authentication system
+```
+
+Branch naming format: `{type}/issue-{number}-{sanitized-title}`
+- **feat**: New features
+- **fix**: Bug fixes  
+- **docs**: Documentation changes
+- **chore**: Maintenance tasks
+
+### 4. Fix Issue
 Analyze a GitHub issue and propose code solutions to address the requirements:
 
-`/fix-issue <issue-number>` or `/fix-issue -n <issue-number>`
+`/fix-issue <issue-number>`
 
 Claude will:
 1. Fetch issue details (title, description, requirements, labels)
@@ -193,10 +146,83 @@ Analysis approach:
 - **Architecture alignment**: Ensure solution fits existing patterns
 - **Testing strategy**: Propose validation and testing approaches
 
-### Close Issue with Smart Commit Detection
+### 5. Commit
+When you want Claude to automatically commit code changes with an appropriate message:
+
+`/commit`
+
+**Commit workflow:**
+1. Run `git diff` to analyze changes
+2. Automatically detect the commit type (feat/fix/docs/chore/refactor/test)
+3. Generate a descriptive commit message based on the changes
+4. **Automatically update session context** with commit details
+5. Include all changes in a single commit with:
+   - Main changes described in the commit message
+   - Session context updates included automatically
+   - Claude Code attribution footer
+6. Execute the commit
+
+Example usage:
+```
+Human: /commit
+Claude: [analyzes changes and creates commit]
+Commit: abc1234 - feat: Add new feature
+
+Updating session context with commit details...
+Session context updated with implementation progress.
+```
+
+**Prerequisites**:
+- Staged or unstaged changes to commit
+- Git repository initialized
+
+### 6. Create PR
+Automatically create a pull request with generated title and comprehensive description, then update session context:
+
+`/create-pr`
+
+Claude will:
+1. Analyze branch changes and commit history vs the base branch
+2. Review all file changes to understand the full scope
+3. Generate a semantic PR title following conventional commit format
+4. Create PR via GitHub CLI with:
+   - Executive summary
+   - Motivation and context
+   - Categorized change list with type prefixes (feat/fix/docs/etc)
+   - Future improvement suggestions
+   - Potential issue identification/Risk assessment
+   - Notes for reviewers section
+5. **Automatically update session context** (runs `/update-session`)
+6. **Commit session updates** to capture PR completion
+7. Return the PR URL and session update confirmation
+
+Example usage:
+```
+Human: /create-pr
+Claude: Creating PR...
+PR created: https://github.com/user/repo/pull/123
+
+Updating session context...
+Session context updated with PR completion and next steps.
+Committed session updates.
+
+Work complete! PR ready for review.
+```
+
+**Enhanced Workflow**: The `/create-pr` command provides complete closure by updating SESSIONCONTEXT.md with:
+- PR creation details and URL
+- Work completion status
+- Suggested next steps or follow-up work
+- Updated technical decisions and insights
+
+Prerequisites:
+- GitHub CLI (`gh`) installed and authenticated
+- Feature branch (not main/master)
+
+### 7. Close Issue
 Close a GitHub issue with automatic detection of the resolving commit:
 
-`/close-issue <issue-number>` or `/close-issue -n <issue-number>`
+`/close-issue <issue-number>`
 
 Claude will:
 1. Fetch issue details (title, description, keywords)
@@ -231,71 +257,36 @@ Smart matching criteria:
 - **Topic correlation**: Code changes align with issue requirements
 - **Recency weighting**: Prefer recent commits that likely contain the fix
 
-### Create Branch from Issue
-Create and switch to a new branch based on a GitHub issue:
+### 8. Update Session
+Persist session context to SESSIONCONTEXT.md for seamless session recovery:
 
-`/branch <issue-number>`
+`/update-session`
 
 Claude will:
-1. Fetch issue details from GitHub using the issue number
-2. Determine branch type from issue labels or title (feat/fix/docs/chore)
-3. Generate semantic branch name including issue number
-4. Create and switch to the new branch
-5. Update session context with issue information
-6. Handle edge cases (uncommitted changes, existing branches)
+1. Review recent commits and changes in current session
+2. Analyze PR descriptions and comments
+3. Extract key decisions, implementations, and discoveries
+4. Update the "Session Context" section in SESSIONCONTEXT.md
+5. Include:
+   - Current work summary
+   - Technical decisions made
+   - Issues discovered
+   - Next steps identified
+   - Important code changes
+
+**Auto-Update Integration:**
+- **Automatically runs after `/create-issue`** (captures issue details and planning)
+- **Automatically runs after `/commit`** (captures implementation changes)
+- **Automatically runs after `/create-pr`** (captures PR completion and next steps)
+
+**Manual Use Cases:**
+- **Before switching branches** or ending a session
+- **After major discoveries** or architectural decisions
+- **When context gets stale** or needs refreshing
+- **Mid-development insights** that should be preserved
 
 Example usage:
 ```
-Human: /branch 10
-Claude: Fetching issue #10: "Add user authentication system"
-Creating branch: feat/issue-10-user-authentication
-Switched to new branch 'feat/issue-10-user-authentication'
-Ready to work on: Add user authentication system
-```
-
-Branch naming format: `{type}/issue-{number}-{sanitized-title}`
-- **feat**: New features
-- **fix**: Bug fixes  
-- **docs**: Documentation changes
-- **chore**: Maintenance tasks
-
-### Recap Context
-Get quick overview of current work state and suggested next actions:
-
-`/recap`
-
-Claude will:
-1. Show current branch and commit status
-2. List recent commits and changes
-3. Display open issues with priorities
-4. Show uncommitted changes if any
-5. Suggest logical next actions based on context
-6. Provide session continuity information
-
-Example usage:
-```
-Human: /recap
-Claude: [displays current context summary and next action suggestions]
-```
-
-Example output:
-```
-## Current Context
-- **Branch**: feature-branch (2 commits ahead of main)
-- **Last commit**: feat: Add user authentication
-- **Uncommitted changes**: None
-
-## Recent Activity (Last 3 commits)
-- abc123: feat: Add user authentication system
-- def456: fix: Resolve login validation issue
-- ghi789: docs: Update API documentation
-
-## Open Issues (3 total)
-**High Priority:**
-- #10: Implement payment processing
-- #11: Add user dashboard
-
-## Suggested Next Actions
-1. Continue work on issue #10 payment processing
-2. Create branch for user dashboard feature
+Human: /update-session
+Claude: [updates SESSIONCONTEXT.md with current session context]
 ```
