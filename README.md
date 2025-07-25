@@ -38,7 +38,8 @@ In any project where you want to use these commands:
 ```bash
 # Run this one command:
 curl -s https://raw.githubusercontent.com/MoonBoi9001/claude-code-cli-tools/main/SESSION_CONTEXT.md -o SESSION_CONTEXT.md && \
-echo -e "\n# Session Context Import\n@./SESSION_CONTEXT.md" >> CLAUDE.md && \
+[ -s CLAUDE.md ] && echo -e "\n" >> CLAUDE.md || true; \
+echo -e "# Session Context Import\n@./SESSION_CONTEXT.md" >> CLAUDE.md && \
 grep -q "SESSION_CONTEXT.md" .gitignore 2>/dev/null || echo "SESSION_CONTEXT.md" >> .gitignore
 ```
 
