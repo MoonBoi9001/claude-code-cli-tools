@@ -1,9 +1,11 @@
 ### 1. Recap
+
 Quick load context into new Claude session and get an overview of current work state and suggested next actions:
 
 `/recap`
 
 Claude will:
+
 1. Review the current repository and form a deep understanding of it
 2. Review CLAUDE.md
 3. Review SESSION_CONTEXT.md
@@ -14,13 +16,15 @@ Claude will:
 8. Suggest logical next actions based on context
 
 Example usage:
-```
+
+```text
 Human: /recap
 Claude: [reviews everything as per instructions above and then gives next action suggestions]
 ```
 
 Example output:
-```
+
+```text
 ## 1. Repository Overview
 - **Project**: E-commerce platform with React frontend and Node.js backend
 - **Structure**: Monorepo with packages for frontend, backend, and shared utilities

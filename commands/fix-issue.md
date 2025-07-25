@@ -1,9 +1,11 @@
 ### 4. Fix Issue
+
 Analyze a GitHub issue and propose code solutions to address the requirements:
 
 `/fix-issue <issue-number>`
 
 Claude will:
+
 1. Fetch issue details (title, description, requirements, labels)
 2. Analyze the codebase to understand relevant files and architecture
 3. Identify the specific changes needed to address the issue
@@ -16,7 +18,8 @@ Claude will:
 6. Optionally implement the changes if approved
 
 Example usage:
-```
+
+```text
 Human: /fix-issue 10
 Claude: Analyzing issue #10: "Add user authentication system"
 
@@ -34,6 +37,7 @@ Would you like me to implement these changes?
 ```
 
 Analysis approach:
+
 - **Issue classification**: Determine if it's a bug fix, feature, or improvement
 - **Codebase impact**: Identify which files and modules need changes
 - **Technical feasibility**: Assess complexity and implementation approach
