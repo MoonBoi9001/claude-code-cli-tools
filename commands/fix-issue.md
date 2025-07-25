@@ -4,7 +4,7 @@ Analyze a GitHub issue and propose code solutions to address the requirements:
 
 `/fix-issue <issue-number>`
 
-Claude will:
+Claude will (all steps REQUIRED):
 
 1. Fetch issue details (title, description, requirements, labels)
 2. Analyze the codebase to understand relevant files and architecture
@@ -16,6 +16,7 @@ Claude will:
    - Testing considerations and validation steps
 5. Present the proposed solution for review and approval
 6. Optionally implement the changes if approved
+7. **🚨 MANDATORY: MUST update session context** `SESSION_CONTEXT.md` (runs `/update-session`) with issue analysis and solution details - DO NOT skip this step
 
 Example usage:
 
@@ -34,6 +35,9 @@ Proposed solution:
 3. Implement JWT token generation
 
 Would you like me to implement these changes?
+
+✅ MANDATORY STEP: Updating session context with issue analysis...
+Session context updated with solution details and implementation status.
 ```
 
 Analysis approach:
@@ -43,3 +47,5 @@ Analysis approach:
 - **Technical feasibility**: Assess complexity and implementation approach
 - **Architecture alignment**: Ensure solution fits existing patterns
 - **Testing strategy**: Propose validation and testing approaches
+
+**⚠️ CRITICAL REMINDER: Every /fix-issue command MUST end with updating SESSION_CONTEXT.md - this is not optional!**

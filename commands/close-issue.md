@@ -4,7 +4,7 @@ Close a GitHub issue with automatic detection of the resolving commit:
 
 `/close-issue <issue-number>`
 
-Claude will:
+Claude will (all steps REQUIRED):
 
 1. Fetch issue details (title, description, keywords)
 2. Analyze recent commit history to find the resolving commit by:
@@ -18,7 +18,9 @@ Claude will:
    - Specific commit SHA256 hash that fixed the issue
    - Brief summary of how the commit resolves the issue
 5. Close the issue automatically
-6. Update session context `SESSION_CONTEXT.md` (runs `/update-session`) to reflect issue completion
+6. **🚨 MANDATORY: MUST update session context** `SESSION_CONTEXT.md` (runs `/update-session`) to reflect issue completion - DO NOT skip this step
+
+**⚠️ CRITICAL REMINDER: Every /close-issue command MUST end with updating SESSION_CONTEXT.md - this is not optional!**
 
 Example usage:
 
@@ -31,6 +33,9 @@ Found resolving commit:
 
 Posting resolution comment and closing issue...
 Issue #4 closed successfully with commit abc789.
+
+✅ MANDATORY STEP: Updating session context to reflect issue completion...
+Session context updated with issue closure details.
 ```
 
 Smart matching criteria:

@@ -3,7 +3,7 @@ When you want Claude to automatically commit code changes with an appropriate me
 
 `/commit`
 
-**Commit workflow:**
+**Commit workflow (all steps REQUIRED):**
 1. Run `git diff` to analyze changes
 2. Perform comprehensive change analysis:
    - **Identify primary purpose**: What is the main goal of these changes?
@@ -25,12 +25,10 @@ When you want Claude to automatically commit code changes with an appropriate me
    - Highlights the most impactful change
    - Explains what was added/changed and why (when apparent)
    - Keeps secondary changes in the body, not the title
-5. **Automatically update session context** `SESSION_CONTEXT.md` (runs `/update-session`) with commit details
-6. Include all changes in a single commit with:
-   - Main changes described in the commit message
-   - Session context updates included automatically
-   - Claude Code attribution footer
-7. Execute the commit
+5. Execute the git commit
+6. **🚨 MANDATORY: MUST update session context** `SESSION_CONTEXT.md` (runs `/update-session`) with commit details - DO NOT skip this step
+
+**⚠️ CRITICAL REMINDER: Every /commit command MUST end with updating SESSION_CONTEXT.md - this is not optional!**
 
 Example usage:
 
@@ -39,7 +37,7 @@ Human: /commit
 Claude: [analyzes changes and creates commit]
 Commit: abc1234 - feat: Add new feature
 
-Updating session context with commit details...
+✅ MANDATORY STEP: Updating session context with commit details...
 Session context updated with implementation progress.
 ```
 

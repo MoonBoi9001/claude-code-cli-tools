@@ -4,7 +4,7 @@ Automatically create a pull request with generated title and comprehensive descr
 
 `/create-pr`
 
-Claude will:
+Claude will (all steps REQUIRED):
 
 1. Analyze branch changes and commit history vs the base branch
 2. Review all file changes to understand the full scope
@@ -16,9 +16,11 @@ Claude will:
    - Future improvement suggestions
    - Potential issue identification/Risk assessment
    - Notes for reviewers section
-5. **Automatically update session context** `SESSION_CONTEXT.md` (runs `/update-session`)
+5. **🚨 MANDATORY: MUST update session context** `SESSION_CONTEXT.md` (runs `/update-session`) - DO NOT skip this step
 6. **Commit session updates** to capture PR completion
 7. Return the PR URL and session update confirmation
+
+**⚠️ CRITICAL REMINDER: Every /create-pr command MUST end with updating SESSION_CONTEXT.md - this is not optional!**
 
 Example usage:
 
@@ -27,7 +29,7 @@ Human: /create-pr
 Claude: Creating PR...
 PR created: https://github.com/user/repo/pull/123
 
-Updating session context...
+✅ MANDATORY STEP: Updating session context...
 Session context updated with PR completion and next steps.
 Committed session updates.
 
