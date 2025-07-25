@@ -17,7 +17,7 @@ Human: /branch 10
 Claude: Fetching issue #10: "Add user authentication system"
 Creating branch: feat/issue-10-user-authentication
 Switched to new branch 'feat/issue-10-user-authentication'
-Updated session context so a future instance of claude knows we're working on issue 10
+Updated session context so a future instance of Claude knows we're working on issue 10
 Ready to work on: Add user authentication system
 ```
 

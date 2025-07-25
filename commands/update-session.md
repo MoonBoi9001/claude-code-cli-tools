@@ -15,10 +15,12 @@ Claude will:
    - New learnings
    - Next steps identified
    - Important code changes
+6. Intelligently lightly prune the SESSION_CONTEXT.md document if it gets longer than 400 lines
+7. Strictly ensure that the SESSION_CONTEXT.md document is never longer than 500 lines
 
 **Auto-Update Integration:**
 - **Automatically runs after `/branch`** (captures that we're now working on solving a new issue)
-- **Automatically runs after `/close-isssue`** (captures an issue has been closed/addressed)
+- **Automatically runs after `/close-issue`** (captures an issue has been closed/addressed)
 - **Automatically runs after `/commit`** (captures implementation changes)
 - **Automatically runs after `/create-issue`** (captures issue details and planning)
 - **Automatically runs after `/create-pr`** (captures PR completion and next steps)

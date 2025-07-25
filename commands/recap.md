@@ -1,5 +1,5 @@
 ### 1. Recap
-Quick load context into new claude session and get an overview of current work state and suggested next actions:
+Quick load context into new Claude session and get an overview of current work state and suggested next actions:
 
 `/recap`
 
