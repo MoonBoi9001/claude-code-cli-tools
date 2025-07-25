@@ -26,7 +26,7 @@
 # Clone and install in one command:
 git clone https://github.com/MoonBoi9001/claude-code-cli-tools.git && \
 mkdir -p ~/.claude/commands && \
-cp -r claude-code-cli-tools/commands/* ~/.claude/commands/
+cp -ri claude-code-cli-tools/commands/* ~/.claude/commands/
 ```
 
 **Or manually:** Download this repo as ZIP, create `~/.claude/commands/`, and copy all files from the `commands` folder there.
