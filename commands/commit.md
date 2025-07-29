@@ -29,11 +29,14 @@ When you want Claude to automatically commit code changes with an appropriate me
       - Stop execution completely - do not proceed with any other steps
    b. Check if branch has merged PRs with `gh pr list --state merged --head <branch-name>`
       - If merged PR exists, automatically create a new branch:
-        - Extract base name and type (e.g., `feat/add-auth` → type: `feat`, base: `add-auth`)
-        - Generate semantic name: `<type>/<base>-v2` (e.g., `feat/add-auth-v2`)
-        - If v2 exists, increment: `feat/add-auth-v3`, etc.
+        - Analyze the uncommitted changes to determine the new work's purpose
+        - Generate semantic name based on the NEW changes, not the old branch
+        - Examples: 
+          - If adding API endpoints: `feat/user-profile-endpoints`
+          - If fixing authentication: `fix/jwt-token-expiry`
+          - If refactoring database queries: `refactor/optimize-user-queries`
         - Run `git checkout -b <new-branch-name>`
-        - Inform user: "🔄 Previous PR merged. Created new branch: `<new-branch-name>`"
+        - Inform user: "🔄 Previous PR merged. Created new branch: `<new-branch-name>` based on current changes"
 3. **Handle --all/-a flag** (if provided):
    - Run `git add -A` to stage all changes
    - Inform user: "📦 Staging all changes..."
