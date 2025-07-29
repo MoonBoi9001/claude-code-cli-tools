@@ -2,7 +2,11 @@
 
 Automatically create a pull request with generated title and comprehensive description, then update session context:
 
-`/create-pr`
+`/create-pr [flags]`
+
+**Available flags:**
+
+- `--no-update`: Skip the mandatory session context update (use with caution)
 
 Claude will (all steps REQUIRED):
 
@@ -16,11 +20,13 @@ Claude will (all steps REQUIRED):
    - Future improvement suggestions
    - Potential issue identification/Risk assessment
    - Notes for reviewers section
-5. **🚨 MANDATORY: MUST update session context** `SESSION_CONTEXT.md` (runs `/update-session`) - DO NOT skip this step
+5. **Handle session context update**:
+   - If `--no-update` flag is NOT present: **MANDATORY update** `SESSION_CONTEXT.md` (runs `/update-session`) with PR details
+   - If `--no-update` flag IS present: Skip session update (inform user: "⚠️ Skipping session context update as requested")
 6. **Commit session updates** to capture PR completion
 7. Return the PR URL and session update confirmation
 
-**⚠️ CRITICAL REMINDER: Every /create-pr command MUST end with updating SESSION_CONTEXT.md - this is not optional!**
+**⚠️ CRITICAL REMINDER: Every /create-pr command MUST end with updating SESSION_CONTEXT.md unless --no-update flag is used!**
 
 Example usage:
 
@@ -34,6 +40,16 @@ Session context updated with PR completion and next steps.
 Committed session updates.
 
 Work complete! PR ready for review.
+```
+
+```text
+Human: /create-pr --no-update
+Claude: Creating PR...
+PR created: https://github.com/user/repo/pull/456
+
+⚠️ Skipping session context update as requested
+
+PR ready for review.
 ```
 
 **Enhanced Workflow**: The `/create-pr` command provides complete closure by updating SESSION_CONTEXT.md with:
