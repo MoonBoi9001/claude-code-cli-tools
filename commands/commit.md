@@ -22,15 +22,27 @@ When you want Claude to automatically commit code changes with an appropriate me
    - Extract `--all`/`-a` flag for auto-staging
    - Extract `--no-update` flag to skip session update
    - Validate flag combinations
-2. **🚨 MANDATORY SAFETY CHECK**: Check current branch with `git branch --show-current`
-   - **IMMEDIATELY REFUSE** if on `main` branch - commits to main are NEVER allowed
-   - Display error: "❌ ERROR: Cannot commit to main branch. Please create a feature branch first."
-   - Stop execution completely - do not proceed with any other steps
+2. **🚨 MANDATORY SAFETY CHECKS**:
+   a. Check current branch with `git branch --show-current`
+      - **IMMEDIATELY REFUSE** if on `main` branch - commits to main are NEVER allowed
+      - Display error: "❌ ERROR: Cannot commit to main branch. Please create a feature branch first."
+      - Stop execution completely - do not proceed with any other steps
+   b. Check if branch has merged PRs with `gh pr list --state merged --head <branch-name>`
+      - If merged PR exists, automatically create a new branch:
+        - Extract base name and type (e.g., `feat/add-auth` → type: `feat`, base: `add-auth`)
+        - Generate semantic name: `<type>/<base>-v2` (e.g., `feat/add-auth-v2`)
+        - If v2 exists, increment: `feat/add-auth-v3`, etc.
+        - Run `git checkout -b <new-branch-name>`
+        - Inform user: "🔄 Previous PR merged. Created new branch: `<new-branch-name>`"
 3. **Handle --all/-a flag** (if provided):
    - Run `git add -A` to stage all changes
    - Inform user: "📦 Staging all changes..."
-4. Run `git diff --cached` to analyze staged changes
-5. Perform comprehensive change analysis:
+4. **Verify changes exist**:
+   - Run `git diff --cached` to check for staged changes
+   - If no staged changes, check `git status --porcelain` for any changes
+   - If no changes at all: Display "❌ No changes to commit" and exit
+5. Analyze staged changes with `git diff --cached`
+6. Perform comprehensive change analysis:
    - **Identify primary purpose**: What is the main goal of these changes?
    - **Detect new capabilities**: Look for added functions, methods, options, or features
    - **Recognize patterns**:
@@ -38,20 +50,20 @@ When you want Claude to automatically commit code changes with an appropriate me
      - Added conditionals/validations often indicate new constraints or safeguards
      - New parameters/options suggest enhanced functionality
    - **Weigh significance**: Features > fixes > improvements > refactors > docs > style
-6. Automatically detect the commit type (feat/fix/docs/chore/refactor/test):
+7. Automatically detect the commit type (feat/fix/docs/chore/refactor/test):
    - feat: New functionality or capabilities added
    - fix: Bug fixes or corrections
    - docs: ONLY if changes are purely documentation with no functional impact
    - refactor: Code restructuring without changing functionality
    - test: Adding or modifying tests
    - chore: Maintenance tasks, dependency updates
-7. Generate a descriptive commit message that:
+8. Generate a descriptive commit message that:
    - **Title**: Max 50 characters (imperative mood: "Add", not "Added")
    - Highlights the most impactful change
    - Explains what was added/changed and why (when apparent)
    - Keeps secondary changes in the body, not the title
-8. Execute the git commit
-9. **Handle session context update**:
+9. Execute the git commit
+10. **Handle session context update**:
    - If `--no-update` flag is NOT present: **MANDATORY update** `SESSION_CONTEXT.md` (runs `/update-session`) with commit details
    - If `--no-update` flag IS present: Skip session update (inform user: "⚠️ Skipping session context update as requested")
 
@@ -90,3 +102,4 @@ Commit: ghi9012 - docs: Update API documentation
 
 - Staged or unstaged changes to commit
 - Git repository initialized
+- GitHub CLI (`gh`) installed for PR merge detection
