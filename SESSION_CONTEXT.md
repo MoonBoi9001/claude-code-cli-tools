@@ -1,5 +1,5 @@
 ## Session Context
-<!-- This section is automatically updated by /update-claude command -->
+<!-- This section is automatically updated by /update-session command -->
 <!-- Last updated: YYYY-MM-DD -->
 
 ### Current Work Status
