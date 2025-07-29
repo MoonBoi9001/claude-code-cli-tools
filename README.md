@@ -11,7 +11,7 @@
 2. **`/create-issue`** - Plan and document tasks with AI-assisted GitHub issue creation, including smart suggestions aligned with your project's scope for better team collaboration.
 3. **`/branch <issue-number>`** - Automatically generate and switch to semantically named branches linked to specific GitHub issues, ensuring organized development and easy progress tracking.
 4. **`/fix-issue <issue-number>`** - Let Claude analyze GitHub issues and propose tailored code solutions that fit your project's architecture.
-5. **`/commit`** - Create meaningful commits with AI-generated titles and detailed descriptions that capture change impacts, improving Git history usefullness.
+5. **`/commit [flags]`** - Smart commit workflow with AI-generated messages, branch safety checks, and auto-branching for merged PRs. Supports `--all`/`-a` for auto-staging and `--no-update` to skip session updates.
 6. **`/close-issue <issue-number>`** - Automatically close GitHub issues with contextual comments to the issue thread, additionally referencing the commit that fixed the issue.
 7. **`/create-pr`** - Generate pull requests with insightful titles and descriptions highlighting changes, motivations, and benefits.
 
@@ -54,7 +54,7 @@ This command:
 
 **Commands** (in ~/.claude/commands/):
 - `/recap` - Get project context and suggested next steps
-- `/commit` - Create meaningful commits with good messages
+- `/commit [flags]` - Smart commits with safety checks and auto-branching
 - `/create-pr` - Generate PRs with detailed descriptions
 - `/branch <issue#>` - Create branches from GitHub issues
 - `/create-issue` - Create well-structured GitHub issues
