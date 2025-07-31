@@ -1,65 +1,33 @@
-### 6. Create PR
+### (Available Flags: --draft, --update)
 
-Automatically create a pull request with generated title and comprehensive description, then update session context:
+#### Flags:
+**Available flags:**
+- `--draft`: Create as draft PR
+- `--update`: Perform a mandatory session context update
 
+#### Description:
+Intelligently create a pull request with conventional commit title (max 50 chars) and appropriately-sized context aware description also give a context-aware merge strategy recommendation:
+
+#### Use: 
 `/create-pr [flags]`
 
-**Available flags:**
-
-- `--no-update`: Skip the mandatory session context update (use with caution)
-
-Claude will (all steps REQUIRED):
-
-1. Analyze branch changes and commit history vs the base branch
-2. Review all file changes to understand the full scope
-3. Generate a semantic PR title following conventional commit format
-4. Create PR via GitHub CLI with:
-   - Executive summary
-   - Motivation and context
-   - Categorized change list with type prefixes (feat/fix/docs/etc)
-   - Future improvement suggestions
-   - Potential issue identification/Risk assessment
-   - Notes for reviewers section
-5. **Handle session context update**:
-   - If `--no-update` flag is NOT present: **MANDATORY update** `SESSION_CONTEXT.md` (runs `/update-session`) with PR details
-   - If `--no-update` flag IS present: Skip session update (inform user: "⚠️ Skipping session context update as requested")
-6. **Commit session updates** to capture PR completion
-7. Return the PR URL and session update confirmation
-
-**⚠️ CRITICAL REMINDER: Every /create-pr command MUST end with updating SESSION_CONTEXT.md unless --no-update flag is used!**
-
-Example usage:
-
-```text
-Human: /create-pr
-Claude: Creating PR...
-PR created: https://github.com/user/repo/pull/123
-
-✅ MANDATORY STEP: Updating session context...
-Session context updated with PR completion and next steps.
-Committed session updates.
-
-Work complete! PR ready for review.
-```
-
-```text
-Human: /create-pr --no-update
-Claude: Creating PR...
-PR created: https://github.com/user/repo/pull/456
-
-⚠️ Skipping session context update as requested
-
-PR ready for review.
-```
-
-**Enhanced Workflow**: The `/create-pr` command provides complete closure by updating SESSION_CONTEXT.md with:
-
-- PR creation details and URL
-- Work completion status
-- Suggested next steps or follow-up work
-- Updated technical decisions and insights
-
-Prerequisites:
-
-- GitHub CLI (`gh`) installed and authenticated
-- Feature branch (not main/master)
+#### Claude will:
+1. **Analyze git diff, status, and commits:**
+   - Review actual code changes, file scope, and commit structure
+   - Determine semantic impact (patch/minor/major-like changes)
+2. **Generate conventional commit title (max 50 chars):**
+   - Create appropriate type prefix (feat/fix/docs/refactor/etc.)
+   - Concise description of primary change
+3. **Scale PR description based on semantic impact:**
+   - **Simple** (patch-like): Bug fixes, documentation, small tweaks
+     *Brief summary + motivation + key changes + impact*
+   - **Medium** (minor-like): New features, API additions, refactoring, dependency upgrades, new configuration options
+     *Detailed summary + thorough motivation + in-depth changes + broader impact*
+   - **Complex** (major-like): Breaking changes, architecture shifts, new systems, database migrations
+     *Full structured sections: executive summary, motivation & context, categorized changes, risks, reviewer notes*
+4. in the claude chat claude will recommend an appropriate merge strategy with clear justification (not to be posted in the PR description)
+   - **Rebase and merge**: Clean sequential commits with individual value
+   - **Create a merge commit**: Multiple domains or educational commit progression
+   - **Squash and merge**: Single logical change or messy development history
+5. **Update session:**
+   - If `--update` specified: automatically run `/update-session`

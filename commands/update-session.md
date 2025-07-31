@@ -1,44 +1,15 @@
-### 8. Update Session
+### Update Session Context Document
 
-Persist session context to SESSION_CONTEXT.md for seamless session recovery:
+#### Description:
+Persist session context to `SESSION_CONTEXT.md`. The session context document is to be treated like a lossless external memory. Claude can use and refer to this document at any time.
 
+#### Use:
 `/update-session`
 
-Claude will:
-
-1. Review recent commits and changes in current session
-2. Analyze PR descriptions and comments
-3. Extract key decisions, implementations, and discoveries
-4. Update the "Session Context" document `SESSION_CONTEXT.md`
-5. Include:
-   - Current work summary
-   - Technical decisions made
-   - Issues discovered
-   - New learnings
-   - Next steps identified
-   - Important code changes
-6. Intelligently lightly prune the SESSION_CONTEXT.md document if it gets longer than 400 lines
-7. Strictly ensure that the SESSION_CONTEXT.md document is never longer than 500 lines
-
-**Auto-Update Integration:**
-
-- **Automatically runs after `/branch`** (captures that we're now working on solving a new issue)
-- **Automatically runs after `/close-issue`** (captures an issue has been closed/addressed)
-- **Automatically runs after `/commit`** (captures implementation changes)
-- **Automatically runs after `/create-issue`** (captures issue details and planning)
-- **Automatically runs after `/create-pr`** (captures PR completion and next steps)
-
-**Manual Use Cases:**
-
-- **Before switching branches** or ending a session
-- **Before compacting the Claude chat history** or clearing the Claude chat history
-- **After major discoveries** or architectural decisions
-- **When context gets stale** or needs refreshing
-- **Mid-development insights** that should be preserved
-
-Example usage:
-
-```text
-Human: /update-session
-Claude: [updates `SESSION_CONTEXT.md` with current session context]
-```
+#### Claude will:
+1. Think back about what has happened in the current session (commits, issues, PR's, technical discoveries, plans, etc...)
+2. Remember key decisions, implementations, and discussion context.
+3. Update the `SESSION_CONTEXT.md` document to persist all recalled memories for future claude.
+4. Use language that avoids unnecessary articles and prepositions while preserving full meaning, rather than truncating or removing important information.
+5. Ensure there is no conflicting information in the document.
+6. Ensure that `SESSION_CONTEXT.md` is never longer than 750 lines
