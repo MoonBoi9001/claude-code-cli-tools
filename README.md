@@ -7,13 +7,11 @@
 ## What This Gives You
 
 **Your New Claude Code Superpowers:**
-1. **`/recap`** - Quickly regain context on your project's status, recent changes, open issues, and suggested next steps – for continuity across Claude sessions.
-2. **`/create-issue`** - Plan and document tasks with AI-assisted GitHub issue creation, including smart suggestions aligned with your project's scope for better team collaboration.
-3. **`/branch <issue-number>`** - Automatically generate and switch to semantically named branches linked to specific GitHub issues, ensuring organized development and easy progress tracking.
-4. **`/fix-issue <issue-number>`** - Let Claude analyze GitHub issues and propose tailored code solutions that fit your project's architecture.
-5. **`/commit [flags]`** - Smart commit workflow with AI-generated messages, branch safety checks, and auto-branching for merged PRs. Supports `--all`/`-a` for auto-staging and `--no-update` to skip session updates.
-6. **`/close-issue <issue-number>`** - Automatically close GitHub issues with contextual comments to the issue thread, additionally referencing the commit that fixed the issue.
-7. **`/create-pr [flags]`** - Generate pull requests with insightful titles and descriptions highlighting changes, motivations, and benefits. Supports `--no-update` to skip session updates.
+1. **`/create-issue [flags]`** - Plan and document tasks with AI-assisted GitHub issue creation, including smart suggestions aligned with your project's scope for better team collaboration. Supports `--update` for session persistence.
+2. **`/fix-issue --<issue-number> [flags]`** - Let Claude analyze GitHub issues and propose tailored code solutions that fit your project's architecture. Supports `--update` for session persistence.
+3. **`/commit [flags]`** - Smart commit workflow with AI-generated messages, branch safety checks, auto-branching for merged PRs, and intelligent domain-based commit splitting. Supports `--no-stage` to skip auto-staging and `--update` for session persistence.
+4. **`/close-issue --<issue-number> [flags]`** - Automatically close GitHub issues with contextual comments to the issue thread, intelligently detecting and referencing the commit or PR that fixed the issue. Supports `--update` for session persistence.
+5. **`/create-pr [flags]`** - Generate pull requests with conventional commit titles, context-aware descriptions scaled by change complexity, and merge strategy recommendations. Supports `--draft` for draft PRs and `--update` for session persistence.
 
 **Utility Commands:**
 - **`/update-session`** - Manually persist key session insights to SESSION_CONTEXT.md for long-term documentation, enabling easy recaps in future Claude instances. 
@@ -27,6 +25,11 @@
 git clone https://github.com/MoonBoi9001/claude-code-cli-tools.git && \
 mkdir -p ~/.claude/commands && \
 cp -ri claude-code-cli-tools/commands/* ~/.claude/commands/
+```
+
+```bash
+# If you're already in the claude-code-cli-tools directory:
+cp -ri commands/* ~/.claude/commands/
 ```
 
 **Or manually:** Download this repo as ZIP, create `~/.claude/commands/`, and copy all files from the `commands` folder there.
@@ -48,19 +51,17 @@ This command:
 - Adds the import to your CLAUDE.md (creates it if needed)
 - Adds SESSION_CONTEXT.md to .gitignore (creates it if needed)
 
-**That's it!** 🎉 Start using `/recap`, `/commit`, `/create-pr` and more.
+**That's it!** 🎉 Start using `/commit`, `/create-pr` and more.
 
 ### What You Just Installed
 
 **Commands** (in ~/.claude/commands/):
-- `/recap` - Get project context and suggested next steps
-- `/commit [flags]` - Smart commits with safety checks and auto-branching
-- `/create-pr [flags]` - Generate PRs with detailed descriptions
-- `/branch <issue#>` - Create branches from GitHub issues
-- `/create-issue` - Create well-structured GitHub issues
-- `/fix-issue <issue#>` - Get implementation suggestions
-- `/close-issue <issue#>` - Close issues with context
-- `/update-session` - Save important discoveries
+- `/commit [flags]` - Smart commits with safety checks, auto-branching, and domain splitting
+- `/create-pr [flags]` - Generate PRs with conventional titles and scaled descriptions
+- `/create-issue [flags]` - Create well-structured GitHub issues with context awareness
+- `/fix-issue --<issue#> [flags]` - Analyze issues and implement solutions
+- `/close-issue --<issue#> [flags]` - Close issues with automatic resolution detection
+- `/update-session` - Persist session insights to external memory
 
 **Project Files**:
 - `CLAUDE.md` - Auto-loaded by Claude (commit this)
