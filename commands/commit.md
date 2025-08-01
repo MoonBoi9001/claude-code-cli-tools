@@ -1,8 +1,8 @@
-### (Available Flags: --no-stage, --update)
+### (Available Flags: --no-auto-stage, --update)
 
 #### Flags:
 **Available flags:**
-- `--no-stage`: Do not automatically stage all changes before committing
+- `--no-auto-stage`: Do not automatically stage all changes before committing
 - `--update`: Perform a mandatory session context update
 
 #### Description:
@@ -18,17 +18,14 @@ Intelligently commit with conventional commit titles/descriptions and domain-awa
    - Check if on `main`/`master` branch
    - Check for merged PRs on current branch using `gh pr list --state merged --head <branch>`
 3. **Handle staging based on flags:**
-   - Run `git add -A`
-     - If `--no-stage` provided: Do not run `git add -A`
+   - Automatically run `git add -A` unless `--no-auto-stage` flag provided
    - Use `git status --porcelain` to verify staging state
 4. **Verify committable changes exist and perform a full code review:**
-   - Inteligently run either `git diff` or `git diff --cached` to check for staged changes
+   - Intelligently run either `git diff` or `git diff --cached` to check for staged changes
      - Do not use the  `--stat` flag when running `git diff`
-   - If no staged changes: check `git status` for unstaged changes
-   - If no changes exist: display "❌ No changes to commit" and exit cleanly
-   - If changes exist but unstaged: inform user to stage changes or use `--all` flag
-5. **Change branch away from `main`/`master` if relevant**:   
-   - If on `main`/`master` or merged PR's found then prepare to create and switch to a new semantic branch with the name based on `git diff` analysis
+   - If no staged changes: use `git status` to check for unstaged changes
+5. **Change branch away from `main`/`master` if relevant:**
+   - If on `main`/`master` or a merged PR is found, prepare to create and switch to a new semantic branch with a name based on a `git diff` analysis
 6. **Analyze changes and detect commit splitting opportunities:**
    - Categorize changed files by logical domains:
      - **Functional code**: Core business logic, features, bug fixes
@@ -52,4 +49,4 @@ Intelligently commit with conventional commit titles/descriptions and domain-awa
    - Display commit hash and message confirmation
    - Handle commit failures gracefully with actionable error messages
 9.  **Update session:**
-   - If `--update` specified: automatically run `/update-session`
+   - If the `--update` flag is given, automatically run the `/update-session` command.

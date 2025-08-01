@@ -6,7 +6,7 @@
 - `--update`: Perform a mandatory session context update
 
 #### Description:
-Intelligently create a pull request with conventional commit title (max 50 chars) and appropriately-sized context aware description also give a context-aware merge strategy recommendation:
+Intelligently create a pull request with a conventional commit title (max 50 chars), a context-aware description, and a context-aware merge strategy recommendation:
 
 #### Use: 
 `/create-pr [flags]`
@@ -25,7 +25,7 @@ Intelligently create a pull request with conventional commit title (max 50 chars
      *Detailed summary + thorough motivation + in-depth changes + broader impact*
    - **Complex** (major-like): Breaking changes, architecture shifts, new systems, database migrations
      *Full structured sections: executive summary, motivation & context, categorized changes, risks, reviewer notes*
-4. in the claude chat claude will recommend an appropriate merge strategy with clear justification (not to be posted in the PR description)
+4. Claude will also recommend an appropriate merge strategy in the chat, with a clear justification (this will not be posted in the PR description).
    - **Rebase and merge**: Clean sequential commits with individual value
    - **Create a merge commit**: Multiple domains or educational commit progression
    - **Squash and merge**: Single logical change or messy development history

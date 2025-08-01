@@ -16,7 +16,7 @@ Analyze a GitHub issue based on the issue number flag and propose code solutions
 1. Fetch issue details (title, description, requirements, labels)
 2. Analyze the codebase to understand relevant files and architecture
 3. Identify the specific changes needed to address the issue
-4. Fomulate a plan/TODO to address the issue
+4. Formulate a plan/TODO to address the issue
 5. Check the plan for any potential issues and take a moment to refine the plan where appropriate
    - The plan/TODO could detail which files/functions/methods/classes need modification
    - The plan/TODO may give specific implementation details or technical approach

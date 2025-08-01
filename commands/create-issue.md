@@ -11,7 +11,7 @@ Create GitHub issues with context-aware descriptions:
 `/create-issue [flags]`
 
 #### Claude will:
-1. Inteligently propose an issue based on recent discussion or session context
+1. Intelligently propose an issue based on recent discussion or session context
 2. Present draft for approval/modification
 3. Allow user to propose alternative issue
 4. Format and enhance user proposals
