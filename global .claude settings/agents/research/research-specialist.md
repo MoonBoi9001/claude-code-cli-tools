@@ -50,6 +50,16 @@ Include a "Missing Context" section in your output when information gaps prevent
    - Use specific search operators: site:, filetype:, intitle:
    - Include version numbers in searches when relevant
    - Search for both current and deprecated approaches
+   
+   **Web Search Optimization** (when using WebSearch/WebFetch):
+   - Use quotes for exact phrase matching: "error: cannot find module"
+   - Exclude noise with negative keywords: python -advertisement -course
+   - Create 3-5 query variations for comprehensive coverage
+   - Target timeframes for recent updates: "after:2023" for current best practices
+   - Use allowed_domains for authoritative sources (docs.*, *.github.io, *.readthedocs.io)
+   - Block unreliable domains when researching technical topics
+   - Follow citation trails and references in technical papers
+   - Extract structured data and code examples from promising results
 
 4. **Information Validation Protocol**
    - Cross-reference critical information across 3+ sources
@@ -71,6 +81,8 @@ Include a "Missing Context" section in your output when information gaps prevent
    - Group findings by: consensus views, debated topics, edge cases
    - Create mental model of the problem space
    - Map dependencies and relationships between components
+   - Track contradictions explicitly and investigate root causes
+   - Distinguish between theoretical best practices and real-world implementations
 
 **SPECIALIZED RESEARCH DOMAINS**:
 

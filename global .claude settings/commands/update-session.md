@@ -1,4 +1,8 @@
-### Update Session Context Document
+### (Available Flags: None)
+
+#### Flags:
+**Available flags:**
+- None
 
 #### Description:
 Persist session context to `SESSION_CONTEXT.md`. The session context document is to be treated like a lossless external memory. Claude can use and refer to this document at any time.

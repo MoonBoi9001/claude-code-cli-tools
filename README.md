@@ -16,23 +16,30 @@
 **Utility Commands:**
 - **`/update-session`** - Manually persist key session insights to `SESSION_CONTEXT.md` for long-term documentation, enabling easy recaps in future Claude instances.
 
-## Quick Setup (< 1 minute)
+## Prerequisites
 
-### Step 1: Install Commands (one time only)
+Before installing, ensure you have:
+- **Claude Code CLI** installed ([installation guide](https://docs.anthropic.com/en/docs/claude-code/quickstart))
+- **GitHub CLI** installed and authenticated (`gh auth login`)
+- **Git** configured with your email and name
+
+## Quick Setup
+
+### Step 1: Install Global Settings (one time only)
 
 ```bash
-# Clone and install in one command:
-git clone https://github.com/MoonBoi9001/claude-code-cli-tools.git && \
-mkdir -p ~/.claude/commands && \
-cp -ri claude-code-cli-tools/commands/* ~/.claude/commands/
+# 1. Clone the repository:
+git clone https://github.com/MoonBoi9001/claude-code-cli-tools.git
+cd claude-code-cli-tools
+
+# 2. Copy settings to your home directory:
+cp -ri "global .claude settings/." ~/.claude/
+
+# 3. Verify installation:
+ls ~/.claude/commands/  # Should show: commit.md, create-pr.md, etc.
 ```
 
-```bash
-# If you're already in the claude-code-cli-tools directory:
-cp -ri commands/* ~/.claude/commands/
-```
-
-**Or manually:** Download this repo as ZIP, create `~/.claude/commands/`, and copy all files from the `commands` folder there.
+**Manual installation:** Download as ZIP, then copy `global .claude settings/` contents to `~/.claude/`
 
 ### Step 2: Set Up Each Project (30 seconds)
 
@@ -53,6 +60,13 @@ This command:
 
 **That's it!** 🎉 Start using `/commit`, `/create-pr` and more.
 
+## 🚀 Quick Start
+
+```bash
+# View all available commands:
+ls ~/.claude/commands/
+```
+
 ### What You Just Installed
 
 **Commands** (in ~/.claude/commands/):
@@ -66,6 +80,58 @@ This command:
 **Project Files**:
 - `CLAUDE.md` - Auto-loaded by Claude (commit this)
 - `SESSION_CONTEXT.md` - Your private notes (gitignored)
+
+---
+
+## 🔧 Troubleshooting
+
+### Claude Code CLI Installation Issues
+
+**macOS/Homebrew:**
+```bash
+# If Claude Code CLI isn't recognized after installation:
+echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+```
+
+**Windows/WSL2:**
+- Claude Code CLI requires WSL2 on Windows
+- Install WSL2 first: `wsl --install`
+- Then install Claude Code CLI inside WSL2
+
+**Linux:**
+```bash
+# If permission denied:
+chmod +x ~/.local/bin/claude
+```
+
+### Command Not Found
+
+If `/commit` or other commands aren't recognized:
+1. Verify files exist: `ls ~/.claude/commands/`
+2. Restart Claude Code CLI
+3. Check CLAUDE.md imports: `cat CLAUDE.md | grep @`
+
+### GitHub CLI Authentication
+
+```bash
+# Check auth status:
+gh auth status
+
+# If not authenticated:
+gh auth login
+```
+
+### Common Issues
+
+**"cp: cannot create directory"**
+- Create parent directory first: `mkdir -p ~/.claude`
+
+**"command not found: claude"**
+- Install Claude Code CLI: https://docs.anthropic.com/en/docs/claude-code/quickstart
+
+**Commands not working in project**
+- Ensure CLAUDE.md exists and imports SESSION_CONTEXT.md
+- Verify SESSION_CONTEXT.md exists in project root
 
 ---
 
