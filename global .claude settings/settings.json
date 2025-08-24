@@ -157,8 +157,10 @@
     ],
     "deny": []
   },
+  "model": "opus",
   "statusLine": {
     "type": "command",
-    "command": "pwd"
+    "command": "~/.claude/statusline.sh",
+    "padding": 0
   }
 }
