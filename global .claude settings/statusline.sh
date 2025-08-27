@@ -145,8 +145,9 @@ session_color() {
 session_txt=""; session_pct=0; session_bar=""
 cost_usd=""; cost_per_hour=""; tpm=""; tot_tokens=""
 
-if command -v jq >/dev/null 2>&1; then
-  blocks_output=$(npx ccusage@latest blocks --json 2>/dev/null || ccusage blocks --json 2>/dev/null)
+# Use globally installed ccusage to avoid npx calls that can break Claude
+if command -v jq >/dev/null 2>&1 && command -v ccusage >/dev/null 2>&1; then
+  blocks_output=$(ccusage blocks --json 2>/dev/null)
   if [ -n "$blocks_output" ]; then
     active_block=$(echo "$blocks_output" | jq -c '.blocks[] | select(.isActive == true)' 2>/dev/null | head -n1)
     if [ -n "$active_block" ]; then

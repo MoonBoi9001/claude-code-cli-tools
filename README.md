@@ -87,6 +87,21 @@ ls ~/.claude/commands/
 
 ### Claude Code CLI Installation Issues
 
+**Installation Protection (Prevents Breaking):**
+The included health check scripts prevent Claude from breaking due to concurrent npm operations:
+```bash
+# If Claude stops working, run the health check:
+~/.claude/local/claude-health-check.sh
+
+# For automatic protection, update your shell alias:
+alias claude="~/.claude/local/claude-wrapper.sh"
+```
+
+**Important:** If using `ccusage`, install it globally to prevent conflicts:
+```bash
+npm install -g ccusage
+```
+
 **macOS/Homebrew:**
 ```bash
 # If Claude Code CLI isn't recognized after installation:
