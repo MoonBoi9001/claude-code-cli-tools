@@ -4,7 +4,7 @@
 set -euo pipefail
 
 BASE="$HOME/.claude/local"
-LOCK_FILE="/tmp/claude-exec.lock"
+LOCK_DIR="/tmp/claude-exec.lock"
 
 # Function to check if Claude is healthy
 is_healthy() {
@@ -13,14 +13,24 @@ is_healthy() {
     [ -f "$BASE/node_modules/@anthropic-ai/claude-code/cli.js" ]
 }
 
-# Acquire lock to prevent concurrent npm operations
-exec 200>"$LOCK_FILE"
-if ! flock -n 200; then
-    # Wait up to 5 seconds for lock
-    flock -w 5 200 || {
-        echo "Warning: Another Claude operation is in progress. Proceeding anyway..." >&2
-    }
-fi
+# Acquire lock using mkdir (works on macOS)
+acquire_lock() {
+    local wait_time=0
+    while [ $wait_time -lt 5 ]; do
+        if mkdir "$LOCK_DIR" 2>/dev/null; then
+            # Successfully acquired lock
+            trap "rmdir '$LOCK_DIR' 2>/dev/null" EXIT
+            return 0
+        fi
+        sleep 0.2
+        wait_time=$((wait_time + 1))
+    done
+    echo "Warning: Another Claude operation is in progress. Proceeding anyway..." >&2
+    return 1
+}
+
+# Try to acquire lock
+acquire_lock || true
 
 # Check health and run
 if ! is_healthy; then
