@@ -21,6 +21,11 @@ Before installing, ensure you have:
 - **Claude Code CLI** installed ([installation guide](https://docs.anthropic.com/en/docs/claude-code/quickstart))
 - **GitHub CLI** installed and authenticated (`gh auth login`)
 - **Git** configured with your email and name
+- **ccusage** (optional) for statusline hours/usage display:
+
+```bash
+npm install -g ccusage  # Shows session time remaining in statusline
+```
 
 ## Quick Setup
 
