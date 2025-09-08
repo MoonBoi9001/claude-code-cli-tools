@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+BASE="$HOME/.claude/local"
+if [ -x "$BASE/node_modules/.bin/claude" ]; then
+  exec "$BASE/node_modules/.bin/claude" "$@"
+elif [ -x "$BASE/node_modules/.bin/claude-code" ]; then
+  exec "$BASE/node_modules/.bin/claude-code" "$@"
+elif [ -f "$BASE/node_modules/@anthropic-ai/claude-code/cli.js" ]; then
+  exec node "$BASE/node_modules/@anthropic-ai/claude-code/cli.js" "$@"
+else
+  echo "Claude CLI not found in $BASE. Try: (cd $BASE && npm install @anthropic-ai/claude-code) or reinstall." >&2
+  exit 1
+fi

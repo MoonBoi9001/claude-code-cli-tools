@@ -1,17 +1,21 @@
-### (Available Flags: --no-auto-stage, --update)
+# (Available Flags: --no-auto-stage)
 
-#### Flags:
+## Flags
+
 **Available flags:**
-- `--no-auto-stage`: Do not automatically stage all changes before committing
-- `--update`: Perform a mandatory session context update
 
-#### Description:
+- `--no-auto-stage`: Do not automatically stage all changes before committing
+
+## Description
+
 Intelligently commit with conventional commit titles/descriptions and domain-aware commit splitting:
 
-#### Use: 
+## Use
+
 `/commit [flags]`
 
-#### Claude will:
+## Claude will
+
 1. **Parse and validate flags:**
    - Extract flags from command
 2. **Safety checks:**
@@ -44,9 +48,7 @@ Intelligently commit with conventional commit titles/descriptions and domain-awa
    - Create concise, descriptive message (max 50 characters, imperative mood)
    - Include scope when applicable: `feat(auth): add user login`
    - Ensure message accurately reflects primary change purpose
-8. **Execute commit and maintain session context:**
+8. **Execute commit:**
    - Perform `git commit` with generated message
    - Display commit hash and message confirmation
    - Handle commit failures gracefully with actionable error messages
-9.  **Update session:**
-   - If the `--update` flag is given, automatically run the `/update-session` command.
