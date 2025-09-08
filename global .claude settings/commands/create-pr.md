@@ -1,17 +1,21 @@
-### (Available Flags: --draft, --update)
+# (Available Flags: --draft)
 
-#### Flags:
+## Flags
+
 **Available flags:**
-- `--draft`: Create as draft PR
-- `--update`: Perform a mandatory session context update
 
-#### Description:
+- `--draft`: Create as draft PR
+
+## Description
+
 Intelligently create a pull request with a conventional commit title (max 50 chars), a context-aware description, and a context-aware merge strategy recommendation:
 
-#### Use: 
+## Use
+
 `/create-pr [flags]`
 
-#### Claude will:
+## Claude will
+
 1. **Analyze git diff, status, and commits:**
    - Review actual code changes, file scope, and commit structure
    - Determine semantic impact (patch/minor/major-like changes)
@@ -29,5 +33,3 @@ Intelligently create a pull request with a conventional commit title (max 50 cha
    - **Rebase and merge**: Clean sequential commits with individual value
    - **Create a merge commit**: Multiple domains or educational commit progression
    - **Squash and merge**: Single logical change or messy development history
-5. **Update session:**
-   - If `--update` specified: automatically run `/update-session`

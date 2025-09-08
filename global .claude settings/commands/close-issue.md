@@ -1,18 +1,21 @@
-### (Required Flags: --<issue-number>. Available Flags: --update)
+# (Required Flags: --<issue-number>)
 
-#### Flags:
+## Flags
+
 **Required flags:**
-- `--<issue-number>`: The GitHub issue we want to close
-**Available flags:**
-- `--update`: Perform a mandatory session context update
 
-#### Description:
+- `--<issue-number>`: The GitHub issue we want to close
+
+## Description
+
 Intelligently close a GitHub issue with automatic detection of the resolving commit or PR:
 
-#### Use:
+## Use
+
 `/close-issue [flags]`
 
-#### Claude will:
+## Claude will
+
 1. Fetch the issue details (title, description, keywords)
 2. Analyze recent commit/PR history to find the resolving commit/PR by:
    - Matching commit/PR titles and descriptions with issue details
@@ -24,5 +27,3 @@ Intelligently close a GitHub issue with automatic detection of the resolving com
    - Specific commit hash or PR # that fixed the issue
    - Brief summary of how the commit/PR resolved the issue
 4. Close the issue automatically
-5. **Update session:**
-   - If `--update` specified: automatically run `/update-session`
