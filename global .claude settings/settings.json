@@ -67,6 +67,7 @@
       "Bash(ip route:*)",
       "Bash(journalctl:*)",
       "Bash(ls:*)",
+      "Bash(cd:*)",
       "Bash(mkdir:*)",
       "Bash(mypy:*)",
       "Bash(node:--version)",
@@ -84,6 +85,7 @@
       "Bash(ping:-c *)*",
       "Bash(pip list:*)",
       "Bash(pip show:*)",
+      "Bash(pnpm install:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm lint:sol:*)",
       "Bash(pnpm test:*)",
@@ -92,6 +94,24 @@
       "Bash(pvesh get /nodes/pve/qemu:*)",
       "Bash(pvesh get:*)",
       "Bash(pveversion:*)",
+      "Bash(proxmox-backup-manager datastore list:*)",
+      "Bash(proxmox-backup-manager datastore show:*)",
+      "Bash(proxmox-backup-manager user list:*)",
+      "Bash(proxmox-backup-manager user show:*)",
+      "Bash(proxmox-backup-manager sync-job list:*)",
+      "Bash(proxmox-backup-manager sync-job show:*)",
+      "Bash(proxmox-backup-manager verify-job list:*)",
+      "Bash(proxmox-backup-manager verify-job show:*)",
+      "Bash(proxmox-backup-manager task list:*)",
+      "Bash(proxmox-backup-manager task show:*)",
+      "Bash(proxmox-backup-manager garbage-collection status:*)",
+      "Bash(proxmox-backup-manager versions:*)",
+      "Bash(proxmox-backup-client list:*)",
+      "Bash(proxmox-backup-client show:*)",
+      "Bash(proxmox-backup-client status:*)",
+      "Bash(proxmox-backup-client catalog:*)",
+      "Bash(proxmox-backup-client version:*)",
+      "Bash(proxmox-backup-client snapshot list:*)",
       "Bash(pwd:*)",
       "Bash(pytest:*)",
       "Bash(python:--version)",
@@ -102,6 +122,7 @@
       "Bash(sort:*)",
       "Bash(speedtest-cli:*)",
       "Bash(stat:*)",
+      "Bash(strings:*)",
       "Bash(sudo chown:*)",
       "Bash(sudo du:*)",
       "Bash(sudo journalctl:*)",
@@ -155,13 +176,117 @@
       "WebFetch(domain:pve.proxmox.com)",
       "WebSearch"
     ],
-    "deny": []
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Read(**/.env.staging)",
+      "Read(**/.env.test)"
+    ]
+  },
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
   },
   "model": "opus",
+  "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/auto-approve-webfetch.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/auto-approve-piped-bash.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/auto-approve-ssh.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/auto-approve-reads.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Write|Edit|Bash|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/block-env-files.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/block-dangerous-proxmox.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/block-force-push.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/claude_sound.mp3 &"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/permission-sound.sh"
+          }
+        ]
+      }
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
     "padding": 0
   },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true
+  },
+  "alwaysThinkingEnabled": true,
   "statusline": "/Users/samuel/.claude/statusline.sh"
 }
