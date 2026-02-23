@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Auto-approve chained bash commands when all individual commands are in the allow list.
+Auto-approve bash commands when they match patterns in the allow list.
 
-Solves the problem where `ls | grep foo` or `cd /path && make` requires approval
-even though all individual commands are allowed.
+Handles both single commands and chained commands (pipes, &&, ||, ;).
+Bypasses Claude Code's built-in permission matching which has issues with
+commands containing shell-like characters (|, >, &) even when quoted/escaped.
 """
 from pathlib import Path
 import sys
@@ -12,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from hook_utils import (
     parse_hook_input, approve, pass_through,
-    CommandValidator, ChainSplitter
+    CommandValidator
 )
 
 
@@ -27,11 +28,7 @@ def main():
 
     command = hook.get_input("command")
 
-    # Skip single commands without operators (let standard allow list handle)
-    if not ChainSplitter().has_operators(command):
-        pass_through()
-
-    # Validate the command chain
+    # Validate all commands (single or chained) against allow patterns
     result = CommandValidator().validate(command)
     if result.approved:
         approve()
