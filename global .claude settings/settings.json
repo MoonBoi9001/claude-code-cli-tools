@@ -226,6 +226,15 @@
             "command": "/Users/samuel/.claude/hooks/auto-approve-reads.py"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/auto-approve-edits.py"
+          }
+        ]
       }
     ],
     "PreToolUse": [
