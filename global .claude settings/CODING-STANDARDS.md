@@ -1,8 +1,6 @@
 # Coding Standards (coding-standards.md / CODING-STANDARDS.md)
 
-Remember to follow these standards when writing code.
-If the user explicitly asks you to follow coding standards, these are the standards you should follow.
-If the user does not explicitly ask you to follow coding standards, you should still follow these standards, unless the user explicitly asks you to not follow them.
+Remember to follow these coding standards when writing code.
 
 ## Core Principles
 
@@ -22,43 +20,81 @@ Choose the simplest solution that solves the problem. Avoid premature optimizati
 
 **L - Liskov Substitution**: Subtypes must be substitutable for base types.
 
-**I - Interface Segregation**: Many specific interfaces > one general interface.
+**I - Interface Segregation**: Specific interfaces > general interface.
 
 **D - Dependency Inversion**: Depend on abstractions, not concretions.
+
+## Async & Concurrency
+
+**No blocking in async contexts.**
+
+**Shared state needs synchronization.**
+
+**Avoid hold-across-await.**
+
+## Security
+
+**Validate at boundaries.** All external input (user input, API responses, config files) must be validated before use. Internal code can trust internal data.
+
+**No secrets in code.**
+
+**Parameterize queries.** Use parameterized queries or ORMs. Never interpolate user input into SQL or shell commands.
+
+## Critical Thinking
+
+Question assumptions before implementing major changes. Specifications may contain flawed logic or contradictory requirements.
+
+### Sanity Check Before Changes
+
+Before removing significant code (>500 lines) or refactoring architecture:
+
+**Trace responsibility flow**: Where does this logic move? Does the target component have necessary context? If configuration becomes orphaned (defined but unused), the design is broken.
+
+**Verify with code, not logic**: Check actual implementation in affected systems. Assumptions about "another system handles this" often fail when you read that system's code.
+
+**Consider performance**: Distinguish cheap operations (in-memory checks) from expensive ones (network I/O, database queries).
+
+### Warning Signs
+
+Stop and reconsider when:
+
+- User questions the approach - Don't defend. Reconsider from first principles.
+- Removing code without verified replacement implementation
+- Cross-system impacts not traced end-to-end
+- Assumptions not validated by examining actual code
+
+### Domain Awareness
+
+Apply domain knowledge to validate solutions. A feature that sounds reasonable may be nonsensical given underlying constraints.
 
 ## Testing Standards
 
 ### TDD (Test-Driven Development)
 
-Write tests BEFORE implementation, following red-green-refactor cycle:
-
-1. Write failing test
-2. Write minimal code to pass the test
-3. Refactor the code to make it better
+Ideally, write tests BEFORE implementation, following red-green-refactor.
 
 ### AAA (Arrange, Act, Assert)
 
 Structure every test with three clear sections:
-
-1. Arrange - Set up test data and dependencies
-2. Act - Execute the code under test
-3. Assert - Verify the results
+1. Arrange
+2. Act
+3. Assert
 
 ### FIRST Principles
 
-**Fast**: Tests run in milliseconds. Mock external dependencies.
+**Fast**: Tests run in milliseconds.
 
-**Independent**: Tests don't depend on each other. Each test has its own setup.
+**Independent**: Tests don't depend on each other.
 
-**Repeatable**: Same result every time. Mock time-dependent and random behavior.
+**Repeatable**: Same result every time.
 
-**Self-validating**: Pass/fail with no manual checks. Use assertions, not print statements.
+**Self-validating**: Pass/fail with no manual checks.
 
-**Timely**: Write tests when they're needed (ideally before code).
+**Timely**: Write tests when they're needed.
 
 ### FF (Fail Fast)
 
-Validate inputs immediately. Don't let invalid data propagate through the system.
+Validate inputs immediately.
 
 ## Code Review Checklist
 
@@ -66,30 +102,35 @@ Before submitting code, verify:
 
 - [ ] No repeated code (DRY)
 - [ ] Simplest solution chosen (KISS)
-- [ ] Single responsibility per class/function (SOLID-S)
-- [ ] Tests written first or alongside code (TDD)
+- [ ] Single responsibility per class/function
+- [ ] Tests written first or alongside code
 - [ ] All tests follow AAA structure
 - [ ] Tests are FIRST compliant
-- [ ] Input validation fails fast (FF)
-- [ ] Dependencies injected, not hardcoded (SOLID-D)
+- [ ] Input validation fails fast
+- [ ] Dependencies injected, not hardcoded
+- [ ] No blocking calls in async code
+- [ ] No secrets hardcoded
+- [ ] External input validated at boundaries
 
 ## When to Break Rules
 
-**DRY**: Repeat code if abstraction would be more complex than duplication.
+**DRY**: Repeat code if abstraction would be more complex.
 **KISS**: Add complexity when simplicity creates bugs or performance issues.
-**SOLID**: Small scripts don't need full SOLID architecture.
-**TDD**: Exploratory prototypes can defer tests until design stabilizes.
 
 ## Red Flags
 
-- High cyclomatic complexity (>10 per function)
-- Deep nesting (>3 levels of indentation)
-- Test files without AAA structure
+- High cyclomatic complexity
+- Deep nesting
+- Test files without AAA
 - Missing error handling
-- Hardcoded configuration values
-- No type hints (Python) or types (TypeScript)
-- God objects (classes doing too many unrelated things)
-- Tight coupling (dependencies on concrete implementations)
+- Hardcoded config
+- No type hints/types
+- Classes doing too many unrelated things
+- Tight coupling
+- Dead code
+- Blocking calls in async functions
+- Loops that issue one query per iteration
+- Comments that contradict the code
 
 ## Git Workflow
 
