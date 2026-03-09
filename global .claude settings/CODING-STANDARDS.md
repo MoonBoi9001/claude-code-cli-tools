@@ -6,7 +6,15 @@ Remember to follow these coding standards when writing code.
 
 ### DRY (Don't Repeat Yourself)
 
-Extract repeated logic into functions, classes, or utilities. If the same code appears twice, it should be abstracted.
+Abstract when you'd need to change multiple places for one logical change.
+
+**Keep repetition when:**
+
+- Each instance is simple and self-documenting
+- The abstraction costs more to understand than the duplication
+- The "duplicates" serve different purposes and may diverge
+
+Prefer simple code that repeats over clever code that doesn't.
 
 ### KISS (Keep It Simple, Stupid)
 
@@ -76,6 +84,7 @@ Ideally, write tests BEFORE implementation, following red-green-refactor.
 ### AAA (Arrange, Act, Assert)
 
 Structure every test with three clear sections:
+
 1. Arrange
 2. Act
 3. Assert
@@ -96,11 +105,21 @@ Structure every test with three clear sections:
 
 Validate inputs immediately.
 
+## No Silent Failures
+
+Code that swallows errors and continues is code that can be broken for weeks without anyone knowing.
+
+**Never swallow errors.** `except Exception: pass` and `except Exception: return default` without logging are forbidden. Log with enough context to diagnose. Prefer re-raising.
+
+**Fallbacks must be observable.** If code catches an error and continues with reduced functionality, surface it through metrics, structured log fields, or health endpoint status.
+
+**Distinguish expected absence from unexpected failure.** A missing optional config is a DEBUG log. A crashed dependency is a WARNING or ERROR.
+
 ## Code Review Checklist
 
 Before submitting code, verify:
 
-- [ ] No repeated code (DRY)
+- [ ] Repetition justified or abstracted (DRY)
 - [ ] Simplest solution chosen (KISS)
 - [ ] Single responsibility per class/function
 - [ ] Tests written first or alongside code
@@ -111,10 +130,10 @@ Before submitting code, verify:
 - [ ] No blocking calls in async code
 - [ ] No secrets hardcoded
 - [ ] External input validated at boundaries
+- [ ] Fallback paths are observable (metrics, structured logs, health status)
 
 ## When to Break Rules
 
-**DRY**: Repeat code if abstraction would be more complex.
 **KISS**: Add complexity when simplicity creates bugs or performance issues.
 
 ## Red Flags
@@ -131,6 +150,8 @@ Before submitting code, verify:
 - Blocking calls in async functions
 - Loops that issue one query per iteration
 - Comments that contradict the code
+- Silent fallbacks (`except: return default` without logging or metrics)
+- Degradation paths with no observability
 
 ## Git Workflow
 
