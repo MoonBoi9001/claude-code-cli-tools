@@ -21,6 +21,25 @@ Present tabular data as beautifully formatted, color-coded tables in the termina
 - Always read from the data source (CSV, parquet, JSON) rather than hardcoding values.
 - Use `pandas` for data loading when available; fall back to `csv` stdlib if not.
 
+## Terminal Width
+
+Tables must fit the terminal. Always detect width and constrain output accordingly.
+
+```python
+import shutil
+term_width = shutil.get_terminal_size((80, 24)).columns
+```
+
+**Hard cap**: total table width (including borders and 2-char left indent) must never exceed `term_width`. If the natural column widths would overflow, shrink the widest column(s) and wrap cell text. When a cell's content is wrapped, continuation lines repeat the border characters but leave other columns empty.
+
+**Column sizing strategy**:
+1. Compute each column's natural width from the widest value (header or data)
+2. Add 2 chars padding per column (1 each side)
+3. Add border characters: `num_columns + 1` vertical bars
+4. Add 2 chars for left indent
+5. If total exceeds `term_width`, reduce the widest column iteratively until it fits, with a minimum column width of 10 characters
+6. Wrap cell text in shrunk columns using `textwrap.wrap()`
+
 ## Table Construction
 
 Use Unicode box-drawing characters for borders:
@@ -39,7 +58,7 @@ Use Unicode box-drawing characters for borders:
 | `\u2500` | `─` | Horizontal line |
 | `\u2502` | `│` | Vertical line |
 
-Build border strings dynamically based on the number of columns. Do not hardcode table widths.
+Build border strings dynamically based on column widths. Do not hardcode table widths.
 
 ## Color Coding
 
@@ -68,51 +87,73 @@ When thresholds are not obvious from context, ask the user or use sensible defau
 
 ```python
 python3 -c "
-import pandas as pd
+import shutil, textwrap
 
-df = pd.read_csv('data.csv')
-rows = ['row1', 'row2', 'row3']
-cols = ['col1', 'col2', 'col3']
+term_width = shutil.get_terminal_size((80, 24)).columns
+INDENT = 2
+BOLD = '\033[1m'; RESET = '\033[0m'
+GREEN = '\033[32m'; YELLOW = '\033[33m'; RED = '\033[31m'
 
-for _, record in df.iterrows():
-    title = record['name']
-    print(f'  \033[1m{title}\033[0m')
-    print()
+headers = ['Name', 'Status', 'Description']
+rows = [
+    ['alpha', 'OK', 'A short description of the first item'],
+    ['beta', 'WARN', 'A longer description that might need wrapping in narrow terminals'],
+    ['gamma', 'FAIL', 'Another description'],
+]
 
-    # Build dynamic borders
-    top = '  \u250c' + '\u2500' * 18
-    hdr = '  \u2502' + ' ' * 18
-    mid = '  \u251c' + '\u2500' * 18
-    bot = '  \u2514' + '\u2500' * 18
+# 1. Compute natural column widths from data
+col_widths = [len(h) for h in headers]
+for row in rows:
+    for i, cell in enumerate(row):
+        col_widths[i] = max(col_widths[i], len(cell))
 
-    for c in cols:
-        top += '\u252c' + '\u2500' * 8
-        hdr += '\u2502 ' + f'{c:>5s}' + '  '
-        mid += '\u253c' + '\u2500' * 8
-        bot += '\u2534' + '\u2500' * 8
+# 2. Add padding (1 each side)
+padded = [w + 2 for w in col_widths]
 
-    top += '\u2510'; hdr += '\u2502'
-    mid += '\u2524'; bot += '\u2518'
+# 3. Check total: indent + borders + padded widths
+num_cols = len(headers)
+total = INDENT + (num_cols + 1) + sum(padded)
 
-    print(top); print(hdr); print(mid)
+# 4. Shrink widest columns if needed (min 10 inner width)
+while total > term_width:
+    widest = max(range(num_cols), key=lambda i: padded[i])
+    if padded[widest] <= 12:  # min 10 + 2 padding
+        break
+    padded[widest] -= 1
+    total -= 1
 
-    for i, r in enumerate(rows):
-        line = f'  \u2502 {r:<16s} '
-        for c in cols:
-            v = record[f'{r}_{c}']
-            if v >= 25:
-                cell = f'\033[31m{v:>5.1f}%\033[0m'
-            elif v >= 15:
-                cell = f'\033[33m{v:>5.1f}%\033[0m'
-            else:
-                cell = f'\033[32m{v:>5.1f}%\033[0m'
-            line += f'\u2502 {cell} '
-        line += '\u2502'
-        print(line)
-        if i < len(rows) - 1:
-            print(mid)
+inner = [p - 2 for p in padded]  # usable char width per column
 
-    print(bot); print()
+# 5. Build helpers
+def hline(left, mid, right):
+    return ' ' * INDENT + left + mid.join('\u2500' * p for p in padded) + right
+
+def render_row(cells, colors=None):
+    wrapped = [textwrap.wrap(c, w) or [''] for c, w in zip(cells, inner)]
+    max_lines = max(len(w) for w in wrapped)
+    for ln in range(max_lines):
+        parts = []
+        for i, w in enumerate(wrapped):
+            text = w[ln] if ln < len(w) else ''
+            color = (colors[i] if colors else '') if ln == 0 or (colors and colors[i]) else ''
+            reset = RESET if color else ''
+            parts.append(f' {color}{text:<{inner[i]}}{reset} ')
+        print(' ' * INDENT + '\u2502' + '\u2502'.join(parts) + '\u2502')
+
+# 6. Print table
+print()
+print(f'{\" \" * INDENT}{BOLD}Example Table{RESET}')
+print()
+print(hline('\u250c', '\u252c', '\u2510'))
+render_row(headers, [BOLD] * num_cols)
+print(hline('\u251c', '\u253c', '\u2524'))
+for i, row in enumerate(rows):
+    status_color = {\"OK\": GREEN, \"WARN\": YELLOW, \"FAIL\": RED}.get(row[1], '')
+    render_row(row, ['', status_color, ''])
+    if i < len(rows) - 1:
+        print(hline('\u251c', '\u253c', '\u2524'))
+print(hline('\u2514', '\u2534', '\u2518'))
+print()
 "
 ```
 
@@ -131,4 +172,4 @@ When presenting data with multiple groups (e.g. monthly breakdowns, per-category
 - **Counts**: Right-align, comma-separated integers
 - **Mixed types**: Align each column independently based on its data type
 
-Adjust cell width to fit the widest value in each column plus padding.
+Adjust cell width to fit the widest value in each column plus padding, then apply the terminal width constraint described above.
