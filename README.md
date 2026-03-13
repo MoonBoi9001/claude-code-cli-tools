@@ -3,29 +3,25 @@
 <br/>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/%E2%9C%B3%20Claude%20Code-CLI%20Tools-7c3aed?style=for-the-badge&labelColor=1a1a2e&color=7c3aed">
-  <img alt="Claude Code CLI Tools" src="https://img.shields.io/badge/%E2%9C%B3%20Claude%20Code-CLI%20Tools-7c3aed?style=for-the-badge&labelColor=f0f0f5&color=7c3aed">
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/banner-light.svg">
+  <img alt="Claude Code CLI Tools" src=".github/assets/banner-light.svg" width="800">
 </picture>
-
-<br/><br/>
-
-Global settings, skills, hooks, and slash commands for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
-<br/>
-Drop into `~/.claude/` -- works across every project.
 
 <br/>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-a3a3a3.svg?style=flat-square)](LICENSE)&ensp;
-[![Claude Code](https://img.shields.io/badge/claude%20code-compatible-7c3aed.svg?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)&ensp;
-[![Hooks](https://img.shields.io/badge/hooks-9-16a34a.svg?style=flat-square)](#hooks)&ensp;
-[![Skills](https://img.shields.io/badge/skills-4-0ea5e9.svg?style=flat-square)](#skills)&ensp;
-[![Commands](https://img.shields.io/badge/commands-5-f59e0b.svg?style=flat-square)](#commands)
+[![Claude Code](https://img.shields.io/badge/claude%20code-compatible-7c3aed.svg?style=flat-square)](https://docs.anthropic.com/en/docs/claude-code)
+
+<br/>
+
+*Drop into `~/.claude/` -- works across every project.*
 
 </div>
 
 <br/>
 
----
+<img src=".github/assets/divider.svg" width="100%" height="12">
 
 <br/>
 
@@ -81,10 +77,10 @@ skills/
 </details>
 
 <br/>
+<img src=".github/assets/divider.svg" width="100%" height="12">
+<br/>
 
 ## Commands
-
-Five slash commands handle the full git-to-GitHub lifecycle. Available in every Claude Code session once installed.
 
 <br/>
 
@@ -95,24 +91,28 @@ Five slash commands handle the full git-to-GitHub lifecycle. Available in every 
 <td>AI-generated commit messages, branch safety checks, auto-branching for merged PRs, domain-based commit splitting. <code>--no-auto-stage</code> to skip staging.</td>
 <td width="20"></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><kbd>/create-pr</kbd></td>
 <td>Conventional commit titles, descriptions scaled by change complexity, merge strategy recommendations. <code>--draft</code> for draft PRs.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><kbd>/create-issue</kbd></td>
 <td>Structured GitHub issues with smart suggestions aligned to project scope.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><kbd>/fix-issue --&lt;n&gt;</kbd></td>
 <td>Analyses a GitHub issue and proposes code changes that fit the project architecture.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><kbd>/close-issue --&lt;n&gt;</kbd></td>
@@ -121,6 +121,8 @@ Five slash commands handle the full git-to-GitHub lifecycle. Available in every 
 </tr>
 </table>
 
+<br/>
+<img src=".github/assets/divider.svg" width="100%" height="12">
 <br/>
 
 ## Skills
@@ -136,18 +138,21 @@ Skills stay out of context until Claude determines they match the current task, 
 <td>Coordinates agent teams (squads) for parallel work requiring inter-agent communication -- competing hypotheses, cross-layer changes, multi-component features.</td>
 <td width="20"></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><code>subagent-guide</code></td>
 <td>Loaded automatically before any use of the Agent tool. Covers prompt design for subagents (which start with zero context), critical thinking, domain awareness, and model selection.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><code>ansi-table</code></td>
 <td>Renders CSV, parquet, dataframes, and analysis results as colour-coded Unicode box-drawing tables in the terminal with automatic column sizing and width constraints.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><code>create-skill</code></td>
@@ -156,6 +161,8 @@ Skills stay out of context until Claude determines they match the current task, 
 </tr>
 </table>
 
+<br/>
+<img src=".github/assets/divider.svg" width="100%" height="12">
 <br/>
 
 ## Hooks
@@ -175,6 +182,8 @@ Hooks fire on Claude Code events and serve two purposes.
 All hooks share `hook_utils.py` for common patterns. `test_hooks.py` provides the test suite.
 
 <br/>
+<img src=".github/assets/divider.svg" width="100%" height="12">
+<br/>
 
 ## Configuration
 
@@ -187,24 +196,28 @@ All hooks share `hook_utils.py` for common patterns. `test_hooks.py` provides th
 <td>Binds hooks to events, sets the default model to Opus, configures the statusline, enables plugins (rust-analyzer LSP), and defines ~170 pre-approved command patterns spanning git, GitHub CLI, Docker, Proxmox, ZFS, npm, cargo, and common system utilities.</td>
 <td width="20"></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><strong>CODING-STANDARDS.md</strong></td>
 <td>Standards for all code Claude produces: DRY/KISS/SOLID, async discipline, security at boundaries, TDD with AAA structure, fail-fast validation, observable fallbacks, conventional commits.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><strong>RALPH-LOOP.md</strong></td>
 <td>Autonomous iteration loop where Claude runs repeatedly inside a <a href="https://github.com/containers/bubblewrap">bubblewrap</a> sandbox -- reading a prompt, working, committing, and continuing until acceptance criteria are met.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><strong>statusline.sh</strong></td>
 <td>Multi-line status bar showing directory, git branch, latest commit, model, Claude Code version, context window remaining, session time, and burn rate. Built with <a href="https://www.npmjs.com/package/@chongdashu/cc-statusline">cc-statusline</a>.</td>
 <td></td>
 </tr>
+<tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
 <td><strong>mcp_servers.json</strong></td>
@@ -213,6 +226,8 @@ All hooks share `hook_utils.py` for common patterns. `test_hooks.py` provides th
 </tr>
 </table>
 
+<br/>
+<img src=".github/assets/divider.svg" width="100%" height="12">
 <br/>
 
 ## Installation
@@ -234,6 +249,8 @@ cp -r skills/* ~/.claude/skills/
 > [!NOTE]
 > The `-i` flag prompts before overwriting existing files. Restart Claude Code after copying.
 
+<br/>
+<img src=".github/assets/divider.svg" width="100%" height="12">
 <br/>
 
 ## Making It Yours

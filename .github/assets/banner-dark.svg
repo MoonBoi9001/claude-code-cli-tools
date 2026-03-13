@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="140" viewBox="0 0 800 140" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0.9"/>
+      <stop offset="50%" style="stop-color:#6d28d9;stop-opacity:0.7"/>
+      <stop offset="100%" style="stop-color:#5b21b6;stop-opacity:0.5"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed;stop-opacity:0"/>
+      <stop offset="15%" style="stop-color:#7c3aed;stop-opacity:0.4"/>
+      <stop offset="85%" style="stop-color:#7c3aed;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top accent line -->
+  <rect x="100" y="8" width="600" height="1" fill="url(#line)" rx="0.5"/>
+
+  <!-- Icon: terminal prompt -->
+  <g transform="translate(240, 32)">
+    <rect x="0" y="0" width="44" height="32" rx="6" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.7"/>
+    <text x="8" y="22" font-family="monospace" font-size="16" fill="#a78bfa" opacity="0.9">~$</text>
+  </g>
+
+  <!-- Title -->
+  <text x="300" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" font-weight="600" fill="#e2e8f0" letter-spacing="-0.5">Claude Code CLI Tools</text>
+
+  <!-- Subtitle -->
+  <text x="400" y="88" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#94a3b8" text-anchor="middle" letter-spacing="0.3">Global settings, skills, hooks, and commands for Claude Code</text>
+
+  <!-- Pill badges -->
+  <g transform="translate(218, 102)">
+    <rect x="0" y="0" width="72" height="22" rx="11" fill="#7c3aed" opacity="0.15"/>
+    <text x="36" y="15" font-family="monospace" font-size="11" fill="#a78bfa" text-anchor="middle">5 commands</text>
+  </g>
+  <g transform="translate(282, 102)">
+    <rect x="0" y="0" width="58" height="22" rx="11" fill="#0ea5e9" opacity="0.15"/>
+    <text x="29" y="15" font-family="monospace" font-size="11" fill="#7dd3fc" text-anchor="middle">4 skills</text>
+  </g>
+  <g transform="translate(352, 102)">
+    <rect x="0" y="0" width="60" height="22" rx="11" fill="#16a34a" opacity="0.15"/>
+    <text x="30" y="15" font-family="monospace" font-size="11" fill="#86efac" text-anchor="middle">9 hooks</text>
+  </g>
+  <g transform="translate(424, 102)">
+    <rect x="0" y="0" width="90" height="22" rx="11" fill="#f59e0b" opacity="0.15"/>
+    <text x="45" y="15" font-family="monospace" font-size="11" fill="#fcd34d" text-anchor="middle">170+ perms</text>
+  </g>
+
+  <!-- Bottom accent line -->
+  <rect x="100" y="132" width="600" height="1" fill="url(#line)" rx="0.5"/>
+</svg>
