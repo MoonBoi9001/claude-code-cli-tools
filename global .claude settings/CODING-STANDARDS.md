@@ -1,6 +1,6 @@
 # Coding Standards (coding-standards.md / CODING-STANDARDS.md)
 
-Remember to follow these coding standards when writing code.
+Follow these coding standards when writing code, to ensure that the quality of the code passes what is expected from you.
 
 ## Core Principles
 
@@ -54,7 +54,7 @@ Question assumptions before implementing major changes. Specifications may conta
 
 ### Sanity Check Before Changes
 
-Before removing significant code (>500 lines) or refactoring architecture:
+Before removing significant code or refactoring architecture:
 
 **Trace responsibility flow**: Where does this logic move? Does the target component have necessary context? If configuration becomes orphaned (defined but unused), the design is broken.
 
@@ -149,7 +149,7 @@ Before submitting code, verify:
 - Dead code
 - Blocking calls in async functions
 - Loops that issue one query per iteration
-- Comments that contradict the code
+- Comments that contradict code
 - Silent fallbacks (`except: return default` without logging or metrics)
 - Degradation paths with no observability
 
