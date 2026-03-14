@@ -54,6 +54,8 @@ Ask the user where the skill should live:
 
 Most skills only need `name` and `description`.
 
+**Description must be a single line.** Do not use YAML multi-line syntax (`>`, `|`, or line breaks) for the `description` field. Write the entire description on the same line as `description:`. Multi-line descriptions break skill loading.
+
 ## Content
 
 The markdown body after frontmatter is what Claude reads when the skill activates. Two patterns:
