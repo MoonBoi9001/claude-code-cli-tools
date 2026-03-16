@@ -23,8 +23,8 @@ RST() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;117m'; fi; }    # sky blue
 model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;147m'; fi; }  # light purple  
 version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;180m'; fi; } # soft yellow
-cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;249m'; fi; } # light gray
-style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;245m'; fi; } # gray
+cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;146m'; fi; } # light steel blue
+style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;139m'; fi; } # muted purple
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- time helpers ----
@@ -231,9 +231,9 @@ cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;222m'; fi; }   
 burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;220m'; fi; }   # bright gold
 session_color() { 
   rem_pct=$(( 100 - session_pct ))
-  if   (( rem_pct <= 10 )); then SCLR='38;5;210'  # light pink
-  elif (( rem_pct <= 25 )); then SCLR='38;5;228'  # light yellow  
-  else                          SCLR='38;5;194'; fi  # light green
+  if   (( rem_pct <= 10 )); then SCLR='38;5;203'  # coral red
+  elif (( rem_pct <= 25 )); then SCLR='38;5;215'  # amber
+  else                          SCLR='38;5;75'; fi   # medium blue
   if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$SCLR"; fi
 }
 
