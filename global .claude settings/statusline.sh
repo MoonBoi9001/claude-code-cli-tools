@@ -19,12 +19,12 @@ use_color=1
 C() { if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$1"; fi; }
 RST() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
-# ---- modern sleek colors ----
-dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;117m'; fi; }    # sky blue
-model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;147m'; fi; }  # light purple  
-version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;180m'; fi; } # soft yellow
-cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;249m'; fi; } # light gray
-style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;245m'; fi; } # gray
+# ---- modern sleek colors (bold) ----
+dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;117m'; fi; }    # sky blue
+model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;147m'; fi; }  # light purple
+version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;180m'; fi; } # soft yellow
+cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;146m'; fi; } # light steel blue
+style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;139m'; fi; } # muted purple
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- time helpers ----
@@ -50,6 +50,31 @@ progress_bar() {
   filled=$(( pct * width / 100 )); empty=$(( width - filled ))
   printf '%*s' "$filled" '' | tr ' ' '='
   printf '%*s' "$empty" '' | tr ' ' '-'
+}
+
+unicode_bar() {
+  pct="${1:-0}"; width="${2:-10}"
+  [[ "$pct" =~ ^[0-9]+$ ]] || pct=0; ((pct<0))&&pct=0; ((pct>100))&&pct=100
+  filled=$(( pct * width / 100 )); empty=$(( width - filled ))
+  printf '%*s' "$filled" '' | tr ' ' '█'
+  printf '%*s' "$empty" '' | tr ' ' '░'
+}
+
+fmt_tokens() {
+  local n="$1"
+  if [ "$n" -ge 1000000 ]; then
+    local m=$(( n / 1000000 ))
+    local frac=$(( (n % 1000000) / 100000 ))
+    if [ "$frac" -eq 0 ]; then
+      printf '%sM' "$m"
+    else
+      printf '%s.%sM' "$m" "$frac"
+    fi
+  elif [ "$n" -ge 1000 ]; then
+    printf '%sk' "$(( n / 1000 ))"
+  else
+    printf '%s' "$n"
+  fi
 }
 
 # git utilities
@@ -122,7 +147,7 @@ else
 fi
 
 # ---- git colors ----
-git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;150m'; fi; }  # soft green
+git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;150m'; fi; }  # soft green
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- git ----
@@ -137,14 +162,20 @@ fi
 
 # ---- context window calculation ----
 context_pct=""
-context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;37m'; fi; }  # default white
+context_used_pct=0
+tokens_fmt=""
+max_fmt=""
+context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;111m'; fi; }  # steel blue
 
 # Determine max context based on model
 get_max_context() {
   local model_name="$1"
   case "$model_name" in
+    *"1M"*|*"1m"*)
+      echo "1000000"  # 1M context (e.g. Opus 4.6 1M)
+      ;;
     *"Opus 4"*|*"opus 4"*|*"Opus"*|*"opus"*)
-      echo "200000"  # 200K for all Opus versions
+      echo "200000"  # 200K for Opus (default)
       ;;
     *"Sonnet 4"*|*"sonnet 4"*|*"Sonnet 3.5"*|*"sonnet 3.5"*|*"Sonnet"*|*"sonnet"*)
       echo "200000"  # 200K for Sonnet 3.5+ and 4.x
@@ -164,41 +195,45 @@ get_max_context() {
 if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
   MAX_CONTEXT=$(get_max_context "$model_name")
   
-  # Convert current dir to session file path
-  project_dir=$(echo "$current_dir" | sed "s|~|$HOME|g" | sed 's|/|-|g' | sed 's|^-||')
-  session_file="$HOME/.claude/projects/-${project_dir}/${session_id}.jsonl"
-  
-  if [ -f "$session_file" ]; then
+  # Find session file by searching project directories for the session ID
+  session_file=""
+  found=$(find "$HOME/.claude/projects" -maxdepth 2 -name "${session_id}.jsonl" -print -quit 2>/dev/null)
+  if [ -n "$found" ]; then
+    session_file="$found"
+  fi
+
+  if [ -n "$session_file" ] && [ -f "$session_file" ]; then
     # Get the latest input token count from the session file
     latest_tokens=$(tail -20 "$session_file" | jq -r 'select(.message.usage) | .message.usage | ((.input_tokens // 0) + (.cache_read_input_tokens // 0))' 2>/dev/null | tail -1)
     
     if [ -n "$latest_tokens" ] && [ "$latest_tokens" -gt 0 ]; then
       context_used_pct=$(( latest_tokens * 100 / MAX_CONTEXT ))
-      context_remaining_pct=$(( 100 - context_used_pct ))
-      
-      # Set color based on remaining percentage
-      if [ "$context_remaining_pct" -le 20 ]; then
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;203m'; fi; }  # coral red
-      elif [ "$context_remaining_pct" -le 40 ]; then
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;215m'; fi; }  # peach
+      tokens_fmt=$(fmt_tokens "$latest_tokens")
+      max_fmt=$(fmt_tokens "$MAX_CONTEXT")
+
+      # Color based on usage (green → amber → red as context fills up)
+      if [ "$context_used_pct" -ge 80 ]; then
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;203m'; fi; }  # coral red
+      elif [ "$context_used_pct" -ge 60 ]; then
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;215m'; fi; }  # amber
       else
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;158m'; fi; }  # mint green
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;111m'; fi; }  # steel blue
       fi
-      
-      context_pct="${context_remaining_pct}%"
+
+      context_pct="set"
     fi
   fi
 fi
 
 # ---- usage colors ----
-usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;189m'; fi; }  # lavender
-cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;222m'; fi; }   # light gold
-burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;220m'; fi; }   # bright gold
+usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;104m'; fi; }  # medium purple
+cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;172m'; fi; }   # dark gold
+burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;136m'; fi; }   # dark yellow
 session_color() { 
   rem_pct=$(( 100 - session_pct ))
-  if   (( rem_pct <= 10 )); then SCLR='38;5;210'  # light pink
-  elif (( rem_pct <= 25 )); then SCLR='38;5;228'  # light yellow  
-  else                          SCLR='38;5;194'; fi  # light green
+  if   (( rem_pct <= 10 )); then SCLR='1;38;5;203'  # coral red
+  elif (( rem_pct <= 25 )); then SCLR='1;38;5;215'  # amber
+  else                          SCLR='1;38;5;75'; fi   # medium blue
   if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$SCLR"; fi
 }
 
@@ -259,7 +294,9 @@ if command -v ccusage >/dev/null 2>&1 && [ "$HAS_JQ" -eq 1 ]; then
         remaining=$(( end_sec - now_sec )); (( remaining<0 )) && remaining=0
         rh=$(( remaining / 3600 )); rm=$(( (remaining % 3600) / 60 ))
         end_hm=$(fmt_time_hm "$end_sec")
-        session_txt="$(printf '%dh %dm until reset at %s' "$rh" "$rm" "$end_hm")"
+        # Format as 12-hour (e.g. "2pm", "11am")
+        end_12h=$(if date -r 0 +%s >/dev/null 2>&1; then date -r "$end_sec" +"%-l%p"; else date -d "@$end_sec" +"%-l%p"; fi | tr '[:upper:]' '[:lower:]' | tr -d '.')
+        session_txt="$(printf 'reset %s' "$end_12h")"
         session_bar=$(progress_bar "$session_pct" 10)
       fi
     fi
@@ -267,47 +304,33 @@ if command -v ccusage >/dev/null 2>&1 && [ "$HAS_JQ" -eq 1 ]; then
 fi
 
 # ---- render statusline ----
-# Line 1: Directory and git branch
-printf '📁: %s%s%s' "$(dir_color)" "$current_dir" "$(rst)"
-if [ -n "$git_branch" ]; then
-  printf '  🌿: %s%s%s' "$(git_color)" "$git_branch" "$(rst)"
-fi
+# Line 1: Directory
+printf '📁 %s%s%s' "$(dir_color)" "$current_dir" "$(rst)"
 
-# Line 2: Git commit message
-line2=""
-if [ -n "$git_commit" ]; then
-  line2="📝: $(git_color)${git_commit}$(rst)"
-fi
-
-# Line 3: Model, version, and output style
-line3="🤖: $(model_color)${model_name}$(rst)"
+# Line 2: Model and version
+line3="🤖 $(model_color)${model_name}$(rst)"
 if [ -n "$cc_version" ] && [ "$cc_version" != "null" ]; then
-  line3="$line3  📟: $(cc_version_color)v${cc_version}$(rst)"
-fi
-if [ -n "$output_style" ] && [ "$output_style" != "null" ]; then
-  line3="$line3  🎨: $(style_color)style: ${output_style}$(rst)"
+  line3="$line3  📟 $(cc_version_color)v${cc_version}$(rst)"
 fi
 
-# Line 4: Context and session time
+# Line 3: Context bar and session time
 line4=""
 if [ -n "$context_pct" ]; then
-  line4="🧠: $(context_color)Context Remaining: ${context_pct}$(rst)"
+  ctx_bar=$(unicode_bar "$context_used_pct" 17)
+  line4="🧠 $(context_color)${ctx_bar} ${tokens_fmt} / ${max_fmt}$(rst)"
 fi
 if [ -n "$session_txt" ]; then
   if [ -n "$line4" ]; then
-    line4="$line4  ⌛: $(session_color)${session_txt}$(rst)"
+    line4="$line4  ⌛ $(session_color)${session_txt}$(rst)"
   else
-    line4="⌛: $(session_color)${session_txt}$(rst)"
+    line4="⌛ $(session_color)${session_txt}$(rst)"
   fi
 fi
 if [ -z "$line4" ] && [ -z "$context_pct" ]; then
-  line4="🧠: $(context_color)Context Remaining: TBD$(rst)"
+  line4="🧠 $(context_color)░░░░░░░░░░░░░░░░░$(rst)"
 fi
 
 # Print all lines
-if [ -n "$line2" ]; then
-  printf '\n%s' "$line2"
-fi
 printf '\n%s' "$line3"
 if [ -n "$line4" ]; then
   printf '\n%s' "$line4"
