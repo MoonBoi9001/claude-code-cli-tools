@@ -294,7 +294,9 @@ if command -v ccusage >/dev/null 2>&1 && [ "$HAS_JQ" -eq 1 ]; then
         remaining=$(( end_sec - now_sec )); (( remaining<0 )) && remaining=0
         rh=$(( remaining / 3600 )); rm=$(( (remaining % 3600) / 60 ))
         end_hm=$(fmt_time_hm "$end_sec")
-        session_txt="$(printf 'reset at %s' "$end_hm")"
+        # Format as 12-hour (e.g. "2pm", "11am")
+        end_12h=$(if date -r 0 +%s >/dev/null 2>&1; then date -r "$end_sec" +"%-l%p"; else date -d "@$end_sec" +"%-l%p"; fi | tr '[:upper:]' '[:lower:]')
+        session_txt="$(printf 'reset %s' "$end_12h")"
         session_bar=$(progress_bar "$session_pct" 10)
       fi
     fi
@@ -314,7 +316,7 @@ fi
 # Line 3: Context bar and session time
 line4=""
 if [ -n "$context_pct" ]; then
-  ctx_bar=$(unicode_bar "$context_used_pct" 10)
+  ctx_bar=$(unicode_bar "$context_used_pct" 16)
   line4="🧠 $(context_color)${ctx_bar} ${tokens_fmt} / ${max_fmt}$(rst)"
 fi
 if [ -n "$session_txt" ]; then
@@ -325,7 +327,7 @@ if [ -n "$session_txt" ]; then
   fi
 fi
 if [ -z "$line4" ] && [ -z "$context_pct" ]; then
-  line4="🧠 $(context_color)░░░░░░░░░░$(rst)"
+  line4="🧠 $(context_color)░░░░░░░░░░░░░░░░$(rst)"
 fi
 
 # Print all lines
