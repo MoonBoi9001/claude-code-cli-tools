@@ -118,8 +118,9 @@ BASH_SENSITIVE_PATTERNS = [
 # Build patterns for each file-reading command + sensitive basename
 for cmd in FILE_READ_COMMANDS:
     for basename in SENSITIVE_BASENAMES:
-        # Match: cmd ... basename (with optional flags/paths in between)
-        BASH_SENSITIVE_PATTERNS.append(rf'\b{cmd}\b[^|;]*{basename}')
+        # Match: cmd ... basename on the same line (with optional flags/paths in between)
+        # Using [^|;\n] to avoid matching across newlines in heredoc commit messages
+        BASH_SENSITIVE_PATTERNS.append(rf'\b{cmd}\b[^|;\n]*{basename}')
 
 
 # =============================================================================
@@ -191,6 +192,13 @@ def main():
     elif hook.tool_name == "Bash":
         command = hook.get_input("command")
         if is_sensitive_bash(command):
+            # Detect if this is a git commit and provide tailored guidance
+            if command and re.match(r'^\s*git\s+commit\b', command):
+                deny(
+                    f"{DENY_MSG}\n\nCommand blocked.\n\n"
+                    "If you are writing a commit message, use '.environment' "
+                    "instead of '.env' to avoid triggering this block."
+                )
             deny(f"{DENY_MSG}\n\nCommand blocked.")
 
     pass_through()
