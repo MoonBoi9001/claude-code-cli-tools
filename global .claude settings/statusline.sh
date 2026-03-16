@@ -226,9 +226,9 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
 fi
 
 # ---- usage colors ----
-usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;189m'; fi; }  # lavender
-cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;222m'; fi; }   # light gold
-burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;220m'; fi; }   # bright gold
+usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;104m'; fi; }  # medium purple
+cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;172m'; fi; }   # dark gold
+burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;136m'; fi; }   # dark yellow
 session_color() { 
   rem_pct=$(( 100 - session_pct ))
   if   (( rem_pct <= 10 )); then SCLR='38;5;203'  # coral red
