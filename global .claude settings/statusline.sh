@@ -165,7 +165,7 @@ context_pct=""
 context_used_pct=0
 tokens_fmt=""
 max_fmt=""
-context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;252m'; fi; }  # light gray
+context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;111m'; fi; }  # steel blue
 
 # Determine max context based on model
 get_max_context() {
@@ -217,7 +217,7 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
       elif [ "$context_used_pct" -ge 60 ]; then
         context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;215m'; fi; }  # amber
       else
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;252m'; fi; }  # light gray
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;111m'; fi; }  # steel blue
       fi
 
       context_pct="set"
