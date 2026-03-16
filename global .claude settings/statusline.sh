@@ -16,41 +16,11 @@ fi
 use_color=1
 [ -n "$NO_COLOR" ] && use_color=0
 
-C() { if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$1"; fi; }
-RST() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
-
-# ---- modern sleek colors (bold) ----
+# ---- colors ----
 dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;117m'; fi; }    # sky blue
 model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;147m'; fi; }  # light purple
-version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;180m'; fi; } # soft yellow
 cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;146m'; fi; } # light steel blue
-style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;139m'; fi; } # muted purple
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
-
-# ---- time helpers ----
-to_epoch() {
-  ts="$1"
-  if command -v gdate >/dev/null 2>&1; then gdate -d "$ts" +%s 2>/dev/null && return; fi
-  date -u -j -f "%Y-%m-%dT%H:%M:%S%z" "${ts/Z/+0000}" +%s 2>/dev/null && return
-  python3 - "$ts" <<'PY' 2>/dev/null
-import sys, datetime
-s=sys.argv[1].replace('Z','+00:00')
-print(int(datetime.datetime.fromisoformat(s).timestamp()))
-PY
-}
-
-fmt_time_hm() {
-  epoch="$1"
-  if date -r 0 +%s >/dev/null 2>&1; then date -r "$epoch" +"%H:%M"; else date -d "@$epoch" +"%H:%M"; fi
-}
-
-progress_bar() {
-  pct="${1:-0}"; width="${2:-10}"
-  [[ "$pct" =~ ^[0-9]+$ ]] || pct=0; ((pct<0))&&pct=0; ((pct>100))&&pct=100
-  filled=$(( pct * width / 100 )); empty=$(( width - filled ))
-  printf '%*s' "$filled" '' | tr ' ' '='
-  printf '%*s' "$empty" '' | tr ' ' '-'
-}
 
 unicode_bar() {
   pct="${1:-0}"; width="${2:-10}"
@@ -76,9 +46,6 @@ fmt_tokens() {
     printf '%s' "$n"
   fi
 }
-
-# git utilities
-num_or_zero() { v="$1"; [[ "$v" =~ ^[0-9]+$ ]] && echo "$v" || echo 0; }
 
 # ---- JSON extraction utilities ----
 # Pure bash JSON value extractor (fallback when jq not available)
@@ -116,10 +83,8 @@ extract_json_string() {
 if [ "$HAS_JQ" -eq 1 ]; then
   current_dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "unknown"' 2>/dev/null | sed "s|^$HOME|~|g")
   model_name=$(echo "$input" | jq -r '.model.display_name // "Claude"' 2>/dev/null)
-  model_version=$(echo "$input" | jq -r '.model.version // ""' 2>/dev/null)
   session_id=$(echo "$input" | jq -r '.session_id // ""' 2>/dev/null)
   cc_version=$(echo "$input" | jq -r '.version // ""' 2>/dev/null)
-  output_style=$(echo "$input" | jq -r '.output_style.name // ""' 2>/dev/null)
 else
   # Bash fallback for JSON extraction
   # Extract current_dir from workspace object - look for the pattern workspace":{"current_dir":"..."}
@@ -137,27 +102,9 @@ else
   # Extract model name from nested model object
   model_name=$(echo "$input" | grep -o '"model"[[:space:]]*:[[:space:]]*{[^}]*"display_name"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"display_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
   [ -z "$model_name" ] && model_name="Claude"
-  # Model version is in the model ID, not a separate field  
-  model_version=""  # Not available in Claude Code JSON
   session_id=$(extract_json_string "$input" "session_id" "")
   # CC version is at the root level
   cc_version=$(echo "$input" | grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-  # Output style is nested
-  output_style=$(echo "$input" | grep -o '"output_style"[[:space:]]*:[[:space:]]*{[^}]*"name"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-fi
-
-# ---- git colors ----
-git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;150m'; fi; }  # soft green
-rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
-
-# ---- git ----
-git_branch=""
-git_commit=""
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  git_branch=$(git branch --show-current 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-  # Get latest commit hash and message
-  git_commit=$(git log -1 --format="%s" 2>/dev/null | head -c 60)
-  [ ${#git_commit} -eq 60 ] && git_commit="${git_commit}..."
 fi
 
 # ---- context window calculation ----
