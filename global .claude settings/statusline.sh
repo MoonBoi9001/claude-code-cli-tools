@@ -19,12 +19,12 @@ use_color=1
 C() { if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$1"; fi; }
 RST() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
-# ---- modern sleek colors ----
-dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;117m'; fi; }    # sky blue
-model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;147m'; fi; }  # light purple  
-version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;180m'; fi; } # soft yellow
-cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;146m'; fi; } # light steel blue
-style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;139m'; fi; } # muted purple
+# ---- modern sleek colors (bold) ----
+dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;117m'; fi; }    # sky blue
+model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;147m'; fi; }  # light purple
+version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;180m'; fi; } # soft yellow
+cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;146m'; fi; } # light steel blue
+style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;139m'; fi; } # muted purple
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- time helpers ----
@@ -147,7 +147,7 @@ else
 fi
 
 # ---- git colors ----
-git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;150m'; fi; }  # soft green
+git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;150m'; fi; }  # soft green
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
 
 # ---- git ----
@@ -165,7 +165,7 @@ context_pct=""
 context_used_pct=0
 tokens_fmt=""
 max_fmt=""
-context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;111m'; fi; }  # steel blue
+context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;111m'; fi; }  # steel blue
 
 # Determine max context based on model
 get_max_context() {
@@ -213,11 +213,11 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
 
       # Color based on usage (green → amber → red as context fills up)
       if [ "$context_used_pct" -ge 80 ]; then
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;203m'; fi; }  # coral red
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;203m'; fi; }  # coral red
       elif [ "$context_used_pct" -ge 60 ]; then
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;215m'; fi; }  # amber
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;215m'; fi; }  # amber
       else
-        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;111m'; fi; }  # steel blue
+        context_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;111m'; fi; }  # steel blue
       fi
 
       context_pct="set"
@@ -226,14 +226,14 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
 fi
 
 # ---- usage colors ----
-usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;104m'; fi; }  # medium purple
-cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;172m'; fi; }   # dark gold
-burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[38;5;136m'; fi; }   # dark yellow
+usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;104m'; fi; }  # medium purple
+cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;172m'; fi; }   # dark gold
+burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;136m'; fi; }   # dark yellow
 session_color() { 
   rem_pct=$(( 100 - session_pct ))
-  if   (( rem_pct <= 10 )); then SCLR='38;5;203'  # coral red
-  elif (( rem_pct <= 25 )); then SCLR='38;5;215'  # amber
-  else                          SCLR='38;5;75'; fi   # medium blue
+  if   (( rem_pct <= 10 )); then SCLR='1;38;5;203'  # coral red
+  elif (( rem_pct <= 25 )); then SCLR='1;38;5;215'  # amber
+  else                          SCLR='1;38;5;75'; fi   # medium blue
   if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$SCLR"; fi
 }
 
