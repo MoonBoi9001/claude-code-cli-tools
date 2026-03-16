@@ -16,41 +16,11 @@ fi
 use_color=1
 [ -n "$NO_COLOR" ] && use_color=0
 
-C() { if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$1"; fi; }
-RST() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
-
-# ---- modern sleek colors (bold) ----
+# ---- colors ----
 dir_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;117m'; fi; }    # sky blue
 model_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;147m'; fi; }  # light purple
-version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;180m'; fi; } # soft yellow
 cc_version_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;146m'; fi; } # light steel blue
-style_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;139m'; fi; } # muted purple
 rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
-
-# ---- time helpers ----
-to_epoch() {
-  ts="$1"
-  if command -v gdate >/dev/null 2>&1; then gdate -d "$ts" +%s 2>/dev/null && return; fi
-  date -u -j -f "%Y-%m-%dT%H:%M:%S%z" "${ts/Z/+0000}" +%s 2>/dev/null && return
-  python3 - "$ts" <<'PY' 2>/dev/null
-import sys, datetime
-s=sys.argv[1].replace('Z','+00:00')
-print(int(datetime.datetime.fromisoformat(s).timestamp()))
-PY
-}
-
-fmt_time_hm() {
-  epoch="$1"
-  if date -r 0 +%s >/dev/null 2>&1; then date -r "$epoch" +"%H:%M"; else date -d "@$epoch" +"%H:%M"; fi
-}
-
-progress_bar() {
-  pct="${1:-0}"; width="${2:-10}"
-  [[ "$pct" =~ ^[0-9]+$ ]] || pct=0; ((pct<0))&&pct=0; ((pct>100))&&pct=100
-  filled=$(( pct * width / 100 )); empty=$(( width - filled ))
-  printf '%*s' "$filled" '' | tr ' ' '='
-  printf '%*s' "$empty" '' | tr ' ' '-'
-}
 
 unicode_bar() {
   pct="${1:-0}"; width="${2:-10}"
@@ -76,9 +46,6 @@ fmt_tokens() {
     printf '%s' "$n"
   fi
 }
-
-# git utilities
-num_or_zero() { v="$1"; [[ "$v" =~ ^[0-9]+$ ]] && echo "$v" || echo 0; }
 
 # ---- JSON extraction utilities ----
 # Pure bash JSON value extractor (fallback when jq not available)
@@ -116,10 +83,8 @@ extract_json_string() {
 if [ "$HAS_JQ" -eq 1 ]; then
   current_dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "unknown"' 2>/dev/null | sed "s|^$HOME|~|g")
   model_name=$(echo "$input" | jq -r '.model.display_name // "Claude"' 2>/dev/null)
-  model_version=$(echo "$input" | jq -r '.model.version // ""' 2>/dev/null)
   session_id=$(echo "$input" | jq -r '.session_id // ""' 2>/dev/null)
   cc_version=$(echo "$input" | jq -r '.version // ""' 2>/dev/null)
-  output_style=$(echo "$input" | jq -r '.output_style.name // ""' 2>/dev/null)
 else
   # Bash fallback for JSON extraction
   # Extract current_dir from workspace object - look for the pattern workspace":{"current_dir":"..."}
@@ -137,27 +102,9 @@ else
   # Extract model name from nested model object
   model_name=$(echo "$input" | grep -o '"model"[[:space:]]*:[[:space:]]*{[^}]*"display_name"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"display_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
   [ -z "$model_name" ] && model_name="Claude"
-  # Model version is in the model ID, not a separate field  
-  model_version=""  # Not available in Claude Code JSON
   session_id=$(extract_json_string "$input" "session_id" "")
   # CC version is at the root level
   cc_version=$(echo "$input" | grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-  # Output style is nested
-  output_style=$(echo "$input" | grep -o '"output_style"[[:space:]]*:[[:space:]]*{[^}]*"name"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-fi
-
-# ---- git colors ----
-git_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;150m'; fi; }  # soft green
-rst() { if [ "$use_color" -eq 1 ]; then printf '\033[0m'; fi; }
-
-# ---- git ----
-git_branch=""
-git_commit=""
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  git_branch=$(git branch --show-current 2>/dev/null || git rev-parse --short HEAD 2>/dev/null)
-  # Get latest commit hash and message
-  git_commit=$(git log -1 --format="%s" 2>/dev/null | head -c 60)
-  [ ${#git_commit} -eq 60 ] && git_commit="${git_commit}..."
 fi
 
 # ---- context window calculation ----
@@ -225,83 +172,58 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
   fi
 fi
 
-# ---- usage colors ----
-usage_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;104m'; fi; }  # medium purple
-cost_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;172m'; fi; }   # dark gold
-burn_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;136m'; fi; }   # dark yellow
-session_color() { 
-  rem_pct=$(( 100 - session_pct ))
-  if   (( rem_pct <= 10 )); then SCLR='1;38;5;203'  # coral red
-  elif (( rem_pct <= 25 )); then SCLR='1;38;5;215'  # amber
-  else                          SCLR='1;38;5;75'; fi   # medium blue
-  if [ "$use_color" -eq 1 ]; then printf '\033[%sm' "$SCLR"; fi
-}
+# ---- effort level ----
+effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;75m'; fi; }  # default: medium blue
 
-# ---- cost and usage extraction ----
-session_txt=""; session_pct=0; session_bar=""
-cost_usd=""; cost_per_hour=""; tpm=""; tot_tokens=""
+# Read effort level
+effort_level=""
 
-# Extract cost data from Claude Code input
+# 1. Statusline JSON input (future-proof if Anthropic adds it)
 if [ "$HAS_JQ" -eq 1 ]; then
-  # Get cost data from Claude Code's input
-  cost_usd=$(echo "$input" | jq -r '.cost.total_cost_usd // empty' 2>/dev/null)
-  total_duration_ms=$(echo "$input" | jq -r '.cost.total_duration_ms // empty' 2>/dev/null)
-  
-  # Calculate burn rate ($/hour) from cost and duration
-  if [ -n "$cost_usd" ] && [ -n "$total_duration_ms" ] && [ "$total_duration_ms" -gt 0 ]; then
-    # Convert ms to hours and calculate rate
-    cost_per_hour=$(echo "$cost_usd $total_duration_ms" | awk '{printf "%.2f", $1 * 3600000 / $2}')
-  fi
-else
-  # Bash fallback for cost extraction
-  cost_usd=$(echo "$input" | grep -o '"total_cost_usd"[[:space:]]*:[[:space:]]*[0-9.]*' | sed 's/.*:[[:space:]]*\([0-9.]*\).*/\1/')
-  total_duration_ms=$(echo "$input" | grep -o '"total_duration_ms"[[:space:]]*:[[:space:]]*[0-9]*' | sed 's/.*:[[:space:]]*\([0-9]*\).*/\1/')  
-  
-  # Calculate burn rate ($/hour) from cost and duration
-  if [ -n "$cost_usd" ] && [ -n "$total_duration_ms" ] && [ "$total_duration_ms" -gt 0 ]; then
-    # Convert ms to hours and calculate rate
-    cost_per_hour=$(echo "$cost_usd $total_duration_ms" | awk '{printf "%.2f", $1 * 3600000 / $2}')
-  fi
+  effort_level=$(echo "$input" | jq -r '.effort // empty' 2>/dev/null)
 fi
 
-# Get token data and session info from ccusage if available
-if command -v ccusage >/dev/null 2>&1 && [ "$HAS_JQ" -eq 1 ]; then
-  blocks_output=""
-  
-  # Try ccusage with timeout for token data and session info
-  if command -v timeout >/dev/null 2>&1; then
-    blocks_output=$(timeout 5s ccusage blocks --json 2>/dev/null)
-  elif command -v gtimeout >/dev/null 2>&1; then
-    # macOS with coreutils installed
-    blocks_output=$(gtimeout 5s ccusage blocks --json 2>/dev/null)
-  else
-    # No timeout available, run directly (ccusage should be fast)
-    blocks_output=$(ccusage blocks --json 2>/dev/null)
-  fi
-  if [ -n "$blocks_output" ]; then
-    active_block=$(echo "$blocks_output" | jq -c '.blocks[] | select(.isActive == true)' 2>/dev/null | head -n1)
-    if [ -n "$active_block" ]; then
-      
-      # Session time calculation from ccusage
-      reset_time_str=$(echo "$active_block" | jq -r '.usageLimitResetTime // .endTime // empty')
-      start_time_str=$(echo "$active_block" | jq -r '.startTime // empty')
-      
-      if [ -n "$reset_time_str" ] && [ -n "$start_time_str" ]; then
-        start_sec=$(to_epoch "$start_time_str"); end_sec=$(to_epoch "$reset_time_str"); now_sec=$(date +%s)
-        total=$(( end_sec - start_sec )); (( total<1 )) && total=1
-        elapsed=$(( now_sec - start_sec )); (( elapsed<0 ))&&elapsed=0; (( elapsed>total ))&&elapsed=$total
-        session_pct=$(( elapsed * 100 / total ))
-        remaining=$(( end_sec - now_sec )); (( remaining<0 )) && remaining=0
-        rh=$(( remaining / 3600 )); rm=$(( (remaining % 3600) / 60 ))
-        end_hm=$(fmt_time_hm "$end_sec")
-        # Format as 12-hour (e.g. "2pm", "11am")
-        end_12h=$(if date -r 0 +%s >/dev/null 2>&1; then date -r "$end_sec" +"%-l%p"; else date -d "@$end_sec" +"%-l%p"; fi | tr '[:upper:]' '[:lower:]' | tr -d '.')
-        session_txt="$(printf 'reset %s' "$end_12h")"
-        session_bar=$(progress_bar "$session_pct" 10)
-      fi
-    fi
-  fi
+# 2. Parse session JSONL for most recent effort change (~26ms)
+#    Catches both /effort commands and /model effort changes immediately
+if [ -z "$effort_level" ] && [ -n "$session_file" ] && [ -f "$session_file" ]; then
+  effort_level=$(tail -c 262144 "$session_file" 2>/dev/null | python3 -c "
+import sys, json, re
+effort = ''
+for line in sys.stdin:
+    try:
+        e = json.loads(line)
+        if e.get('type') != 'user': continue
+        msg = e.get('message', '')
+        c = msg.get('content', '') if isinstance(msg, dict) else msg if isinstance(msg, str) else ''
+        if not isinstance(c, str): continue
+        if '<command-name>/effort' in c:
+            m = re.search(r'command-args>(low|medium|high|max|auto)</command-args', c)
+            if m: effort = m.group(1)
+        elif 'local-command-stdout' in c and 'effort' in c:
+            clean = re.sub(r'\\x1b\[\d+m|\x1b\[\d+m', '', c)
+            m = re.search(r'with\s+(low|medium|high|max)\s+effort', clean)
+            if m: effort = m.group(1)
+    except: pass
+print(effort)
+" 2>/dev/null)
+  case "$effort_level" in low|medium|high|max|auto) ;; *) effort_level="" ;; esac
 fi
+
+# 3. Stop hook file as fallback
+if [ -z "$effort_level" ] && [ -f "$HOME/.claude/effort_level" ]; then
+  effort_level=$(cat "$HOME/.claude/effort_level" 2>/dev/null | tr -d '[:space:]')
+fi
+
+[ -z "$effort_level" ] && effort_level="max"
+
+# Color effort by intensity
+case "$effort_level" in
+  low)    effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;111m'; fi; } ;;  # steel blue
+  medium) effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;150m'; fi; } ;;  # soft green
+  high)   effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;215m'; fi; } ;;  # amber
+  max)    effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;203m'; fi; } ;;  # coral red
+  auto)   effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;147m'; fi; } ;;  # light purple
+esac
 
 # ---- render statusline ----
 # Line 1: Directory
@@ -313,17 +235,17 @@ if [ -n "$cc_version" ] && [ "$cc_version" != "null" ]; then
   line3="$line3  📟 $(cc_version_color)v${cc_version}$(rst)"
 fi
 
-# Line 3: Context bar and session time
+# Line 3: Context bar and effort level
 line4=""
 if [ -n "$context_pct" ]; then
   ctx_bar=$(unicode_bar "$context_used_pct" 17)
   line4="🧠 $(context_color)${ctx_bar} ${tokens_fmt} / ${max_fmt}$(rst)"
 fi
-if [ -n "$session_txt" ]; then
+if [ -n "$effort_level" ]; then
   if [ -n "$line4" ]; then
-    line4="$line4  ⌛ $(session_color)${session_txt}$(rst)"
+    line4="$line4  $(effort_color)${effort_level}$(rst)"
   else
-    line4="⌛ $(session_color)${session_txt}$(rst)"
+    line4="$(effort_color)${effort_level}$(rst)"
   fi
 fi
 if [ -z "$line4" ] && [ -z "$context_pct" ]; then
