@@ -195,11 +195,14 @@ get_max_context() {
 if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
   MAX_CONTEXT=$(get_max_context "$model_name")
   
-  # Convert current dir to session file path
-  project_dir=$(echo "$current_dir" | sed "s|~|$HOME|g" | sed 's|/|-|g' | sed 's|^-||')
-  session_file="$HOME/.claude/projects/-${project_dir}/${session_id}.jsonl"
-  
-  if [ -f "$session_file" ]; then
+  # Find session file by searching project directories for the session ID
+  session_file=""
+  found=$(find "$HOME/.claude/projects" -maxdepth 2 -name "${session_id}.jsonl" -print -quit 2>/dev/null)
+  if [ -n "$found" ]; then
+    session_file="$found"
+  fi
+
+  if [ -n "$session_file" ] && [ -f "$session_file" ]; then
     # Get the latest input token count from the session file
     latest_tokens=$(tail -20 "$session_file" | jq -r 'select(.message.usage) | .message.usage | ((.input_tokens // 0) + (.cache_read_input_tokens // 0))' 2>/dev/null | tail -1)
     
