@@ -237,6 +237,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/post-edit-lint.py"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Read|Write|Edit|Bash|Glob|Grep",
@@ -262,6 +273,15 @@
           {
             "type": "command",
             "command": "/Users/samuel/.claude/hooks/block-force-push.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/block-push-others-branch.py"
           }
         ]
       }
