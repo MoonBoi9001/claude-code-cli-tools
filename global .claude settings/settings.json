@@ -264,6 +264,15 @@
             "command": "/Users/samuel/.claude/hooks/block-force-push.py"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/block-push-others-branch.py"
+          }
+        ]
       }
     ],
     "Stop": [
