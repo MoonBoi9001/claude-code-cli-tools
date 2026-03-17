@@ -60,6 +60,11 @@ class HookInput:
         """Check if this is a PreToolUse event."""
         return self.hook_event == "PreToolUse"
 
+    @property
+    def is_post_tool_use(self) -> bool:
+        """Check if this is a PostToolUse event."""
+        return self.hook_event == "PostToolUse"
+
     def get_input(self, key: str, default: str = "") -> str:
         """Get a value from tool_input."""
         return self.tool_input.get(key, default)
