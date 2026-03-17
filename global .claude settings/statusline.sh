@@ -83,6 +83,7 @@ extract_json_string() {
 if [ "$HAS_JQ" -eq 1 ]; then
   current_dir=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // "unknown"' 2>/dev/null | sed "s|^$HOME|~|g")
   model_name=$(echo "$input" | jq -r '.model.display_name // "Claude"' 2>/dev/null)
+  model_name="${model_name/ context/}"
   session_id=$(echo "$input" | jq -r '.session_id // ""' 2>/dev/null)
   cc_version=$(echo "$input" | jq -r '.version // ""' 2>/dev/null)
 else
@@ -172,6 +173,71 @@ if [ -n "$session_id" ] && [ "$HAS_JQ" -eq 1 ]; then
   fi
 fi
 
+# ---- rate limit usage (Anthropic OAuth API, cached 60s) ----
+usage_cache="/tmp/claude/statusline-usage-cache.json"
+five_hour_pct=""
+seven_day_pct=""
+five_hour_reset=""
+seven_day_reset=""
+
+if [ "$HAS_JQ" -eq 1 ]; then
+  mkdir -p /tmp/claude
+  cache_stale=1
+  if [ -f "$usage_cache" ]; then
+    cache_age=$(( $(date +%s) - $(stat -f %m "$usage_cache" 2>/dev/null || stat -c %Y "$usage_cache" 2>/dev/null || echo 0) ))
+    [ "$cache_age" -lt 60 ] && cache_stale=0
+  fi
+
+  if [ "$cache_stale" -eq 1 ]; then
+    token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+    if [ -n "$token" ]; then
+      usage_json=$(curl -s --max-time 3 -H "Authorization: Bearer $token" -H "anthropic-beta: oauth-2025-04-20" "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
+      if echo "$usage_json" | jq -e '.five_hour' >/dev/null 2>&1; then
+        echo "$usage_json" > "$usage_cache"
+      fi
+    fi
+  fi
+
+  if [ -f "$usage_cache" ]; then
+    five_hour_pct=$(jq -r '.five_hour.utilization // 0' "$usage_cache" 2>/dev/null | awk '{printf "%.0f", $1}')
+    seven_day_pct=$(jq -r '.seven_day.utilization // 0' "$usage_cache" 2>/dev/null | awk '{printf "%.0f", $1}')
+    five_hour_reset_raw=$(jq -r '.five_hour.resets_at // empty' "$usage_cache" 2>/dev/null)
+    seven_day_reset_raw=$(jq -r '.seven_day.resets_at // empty' "$usage_cache" 2>/dev/null)
+
+    # Format reset times
+    if [ -n "$five_hour_reset_raw" ]; then
+      five_hour_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${five_hour_reset_raw%%.*}" +%s 2>/dev/null || date -d "${five_hour_reset_raw}" +%s 2>/dev/null)
+      if [ -n "$five_hour_epoch" ]; then
+        five_hour_reset=$(date -r "$five_hour_epoch" +"%-l:%M%p" 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d '.')
+        five_hour_reset="${five_hour_reset/:00am/am}"
+        five_hour_reset="${five_hour_reset/:00pm/pm}"
+      fi
+    fi
+    if [ -n "$seven_day_reset_raw" ]; then
+      seven_day_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${seven_day_reset_raw%%.*}" +%s 2>/dev/null || date -d "${seven_day_reset_raw}" +%s 2>/dev/null)
+      if [ -n "$seven_day_epoch" ]; then
+        seven_day_reset=$(date -r "$seven_day_epoch" +"%b %-d %-l:%M%p" 2>/dev/null | tr -d '.' | sed 's/AM/am/;s/PM/pm/')
+        seven_day_reset="${seven_day_reset/:00am/am}"
+        seven_day_reset="${seven_day_reset/:00pm/pm}"
+      fi
+    fi
+  fi
+fi
+
+# Usage bar color based on percentage
+usage_bar_color() {
+  local pct="${1:-0}"
+  if [ "$use_color" -eq 1 ]; then
+    if [ "$pct" -ge 90 ]; then printf '\033[1;38;5;203m'    # red
+    elif [ "$pct" -ge 70 ]; then printf '\033[1;38;5;215m'  # amber
+    elif [ "$pct" -ge 50 ]; then printf '\033[1;38;5;180m'  # orange
+    else printf '\033[1;38;5;150m'                           # green
+    fi
+  fi
+}
+
+dim() { if [ "$use_color" -eq 1 ]; then printf '\033[2m'; fi; }
+
 # ---- effort level ----
 effort_color() { if [ "$use_color" -eq 1 ]; then printf '\033[1;38;5;75m'; fi; }  # default: medium blue
 
@@ -239,11 +305,11 @@ fi
 line4=""
 if [ -n "$context_pct" ]; then
   ctx_bar=$(unicode_bar "$context_used_pct" 17)
-  line4="🧠 $(context_color)${ctx_bar} ${tokens_fmt} / ${max_fmt}$(rst)"
+  line4="🧠 $(context_color)${ctx_bar} ${tokens_fmt}$(rst)"
 fi
 if [ -n "$effort_level" ]; then
   if [ -n "$line4" ]; then
-    line4="$line4  $(effort_color)${effort_level}$(rst)"
+    line4="$line4 $(effort_color)${effort_level}$(rst)"
   else
     line4="$(effort_color)${effort_level}$(rst)"
   fi
@@ -252,9 +318,31 @@ if [ -z "$line4" ] && [ -z "$context_pct" ]; then
   line4="🧠 $(context_color)░░░░░░░░░░░░░░░░░$(rst)"
 fi
 
+# Lines 4-5: Rate limit usage bars
+line5=""
+line6=""
+if [ -n "$five_hour_pct" ] && [ "$five_hour_pct" != "0" -o -n "$five_hour_reset" ]; then
+  bar5=$(unicode_bar "$five_hour_pct" 17)
+  reset5=""
+  [ -n "$five_hour_reset" ] && reset5=" $(dim)${five_hour_reset}$(rst)"
+  line5="🅂  $(usage_bar_color "$five_hour_pct")${bar5} ${five_hour_pct}%$(rst)${reset5}"
+fi
+if [ -n "$seven_day_pct" ] && [ "$seven_day_pct" != "0" -o -n "$seven_day_reset" ]; then
+  bar7=$(unicode_bar "$seven_day_pct" 17)
+  reset7=""
+  [ -n "$seven_day_reset" ] && reset7=" $(dim)${seven_day_reset}$(rst)"
+  line6="🅆  $(usage_bar_color "$seven_day_pct")${bar7} ${seven_day_pct}%$(rst)${reset7}"
+fi
+
 # Print all lines
 printf '\n%s' "$line3"
 if [ -n "$line4" ]; then
   printf '\n%s' "$line4"
+fi
+if [ -n "$line5" ]; then
+  printf '\n%s' "$line5"
+fi
+if [ -n "$line6" ]; then
+  printf '\n%s' "$line6"
 fi
 printf '\n'
