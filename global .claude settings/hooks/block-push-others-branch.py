@@ -20,6 +20,37 @@ from hook_utils import parse_hook_input, deny, pass_through
 SHARED_BRANCHES = {"main", "master", "develop", "staging", "production", "release"}
 
 
+def parse_push_destination(command: str) -> str | None:
+    """Extract the destination branch from a git push refspec.
+
+    Handles:
+        git push origin HEAD:their-branch  -> their-branch
+        git push -u origin src:dst         -> dst
+        git push origin branch             -> branch
+        git push / git push origin         -> None (fall back to local branch)
+    """
+    match = re.search(r'\bgit\s+push\b(.*)', command)
+    if not match:
+        return None
+
+    args = match.group(1).split()
+    positional = [a for a in args if not a.startswith("-")]
+
+    # positional[0] is the remote, positional[1:] are refspecs
+    if len(positional) < 2:
+        return None
+
+    refspec = positional[1]
+    if ":" in refspec:
+        dst = refspec.split(":", 1)[1]
+    else:
+        dst = refspec
+
+    # Strip refs/heads/ prefix
+    dst = re.sub(r'^refs/heads/', '', dst)
+    return dst if dst else None
+
+
 def run(cmd: list[str], timeout: int = 15) -> str:
     """Run a command and return stdout, or empty string on failure."""
     try:
@@ -58,7 +89,9 @@ def main():
     if not re.search(r'\bgit\s+push\b', command):
         pass_through()
 
-    branch = run(["git", "symbolic-ref", "--short", "HEAD"])
+    # Prefer explicit refspec destination over local branch name.
+    # Without this, `git push origin HEAD:their-branch` would bypass the check.
+    branch = parse_push_destination(command) or run(["git", "symbolic-ref", "--short", "HEAD"])
     if not branch or branch in SHARED_BRANCHES:
         pass_through()
 
@@ -81,15 +114,20 @@ def main():
     if not gh_user:
         pass_through()
 
-    default_branch = (
-        run(["gh", "api", "repos/{owner}/{repo}", "-q", ".default_branch"])
-        or "main"
+    ok, default_branch = run_checked(
+        ["gh", "api", "repos/{owner}/{repo}", "-q", ".default_branch"]
     )
+    if not ok or not default_branch:
+        deny(
+            f"Cannot verify branch ownership for '{branch}': "
+            f"failed to determine repository default branch (gh api error). "
+            f"This may be a transient network issue — retry the push."
+        )
 
     ok, authors_raw = run_checked([
         "gh", "api",
         f"repos/{{owner}}/{{repo}}/compare/{default_branch}...{branch}",
-        "-q", ".commits[].author.login",
+        "-q", ".commits[] | (.author.login // .committer.login // empty)",
     ])
     if not ok:
         deny(
@@ -100,7 +138,7 @@ def main():
     if not authors_raw:
         pass_through()  # No divergent commits, can't determine ownership
 
-    authors = {a for a in authors_raw.splitlines() if a}
+    authors = {a for a in authors_raw.splitlines() if a and a != "null"}
     if not authors or gh_user in authors:
         pass_through()
 
