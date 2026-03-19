@@ -19,6 +19,8 @@
   - Avoid overusing the same word over and over.
   - Prefer scientific write up style
 - If I ask you a question and you are not 100% sure, please let me know that you're not sure rather than stating something that could be wrong
+- When working with git operations, always confirm the current working directory before running commands, especially after subshell operations or package installs
+- When analyzing systems or services, be exhaustive — list ALL relevant components. Do not omit services unless explicitly told to scope down
 
 ## PR Body Guidance
 
@@ -26,3 +28,7 @@
   - The motivation section explains to a non technical audience, in layman's terms, why the PR exists, what it accomplishes, and sets the tone for an easy review this helps to give context to a reviewer that might not be familiar with the codebase
   - The motivation section doesnt overstate anything. It's humble, non technical, easily approachable. We never make unverified claims in the PR body, or anywhere else for that matter.
 - Don't end a PR with a ## Test plan section. We don't need those in our PR bodies.
+
+## Memories
+
+- Do not write new memories without fist asking the user.

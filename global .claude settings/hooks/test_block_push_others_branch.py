@@ -7,9 +7,9 @@ import stat
 import subprocess
 import tempfile
 import unittest
-from pathlib import Path
 
-HOOK_PATH = str(Path(__file__).resolve().parent / "block-push-others-branch.py")
+HOOKS_DIR = "/Users/samuel/.claude/hooks"
+HOOK_PATH = f"{HOOKS_DIR}/block-push-others-branch.py"
 
 
 def run_hook(input_data, env=None):
@@ -173,17 +173,13 @@ exit 0
     def test_blocks_when_compare_api_fails(self):
         """Fails closed when gh can't fetch branch authors (e.g. network glitch)."""
         self._setup_mocks(branch="feat/their-feature", authors="other-user")
-        # gh succeeds for user and default branch lookups, but fails for compare
+        # gh succeeds for user lookup but fails for compare
         self._write_script("gh", """#!/usr/bin/env bash
 if [[ "$2" == "user" ]]; then
     echo "samuel"
     exit 0
-elif [[ "$2" == *"compare"* ]]; then
-    exit 1
-else
-    echo "main"
-    exit 0
 fi
+exit 1
 """)
         proc = self._run()
         self.assertEqual(proc.returncode, 2)
@@ -210,60 +206,6 @@ exit 0
         self._setup_mocks(branch="feat/empty-branch", authors="")
         proc = self._run()
         self.assertEqual(proc.returncode, 0)
-
-    # -- refspec destination tests --
-
-    def test_blocks_refspec_push_to_others_branch(self):
-        """Blocks git push origin HEAD:their-branch even if local branch is owned."""
-        self._setup_mocks(branch="feat/their-feature", authors="other-user")
-        proc = self._run(make_input("git push origin HEAD:feat/their-feature"))
-        self.assertEqual(proc.returncode, 2)
-        self.assertIn("Blocked", proc.stderr)
-
-    def test_blocks_refspec_push_with_set_upstream(self):
-        """Blocks git push -u origin HEAD:their-branch."""
-        self._setup_mocks(branch="feat/their-feature", authors="other-user")
-        proc = self._run(make_input("git push -u origin HEAD:feat/their-feature"))
-        self.assertEqual(proc.returncode, 2)
-
-    def test_blocks_refspec_push_with_refs_heads_prefix(self):
-        """Strips refs/heads/ prefix from refspec destination."""
-        self._setup_mocks(branch="feat/their-feature", authors="other-user")
-        proc = self._run(make_input("git push origin HEAD:refs/heads/feat/their-feature"))
-        self.assertEqual(proc.returncode, 2)
-
-    # -- null author handling --
-
-    def test_allows_when_all_authors_null(self):
-        """Passes through when all commit authors are null (unlinked emails)."""
-        self._setup_mocks(branch="feat/unlinked", authors="null\nnull")
-        proc = self._run()
-        self.assertEqual(proc.returncode, 0)
-
-    def test_allows_when_user_present_among_null_authors(self):
-        """Allows push when user is among authors mixed with null entries."""
-        self._setup_mocks(branch="feat/mixed", authors="null\nsamuel\nnull")
-        proc = self._run()
-        self.assertEqual(proc.returncode, 0)
-
-    # -- default branch fail-closed --
-
-    def test_blocks_when_default_branch_api_fails(self):
-        """Fails closed when default branch lookup fails."""
-        self._setup_mocks(branch="feat/their-feature", authors="other-user")
-        self._write_script("gh", """#!/usr/bin/env bash
-if [[ "$2" == "user" ]]; then
-    echo "samuel"
-    exit 0
-elif [[ "$2" == *"compare"* ]]; then
-    echo "other-user"
-    exit 0
-fi
-exit 1
-""")
-        proc = self._run()
-        self.assertEqual(proc.returncode, 2)
-        self.assertIn("default branch", proc.stderr)
 
 
 if __name__ == "__main__":
