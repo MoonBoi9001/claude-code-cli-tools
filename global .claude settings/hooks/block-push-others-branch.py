@@ -7,6 +7,7 @@ has existing commits on the remote authored by other GitHub users. If the
 current user has no commits on the remote branch, the push is blocked
 with a suggestion to create a separate branch and open a PR instead.
 """
+
 from pathlib import Path
 import re
 import subprocess
@@ -55,7 +56,7 @@ def main():
         pass_through()
 
     command = hook.get_input("command")
-    if not re.search(r'\bgit\s+push\b', command):
+    if not re.search(r"\bgit\s+push\b", command):
         pass_through()
 
     branch = run(["git", "symbolic-ref", "--short", "HEAD"])
@@ -82,15 +83,18 @@ def main():
         pass_through()
 
     default_branch = (
-        run(["gh", "api", "repos/{owner}/{repo}", "-q", ".default_branch"])
-        or "main"
+        run(["gh", "api", "repos/{owner}/{repo}", "-q", ".default_branch"]) or "main"
     )
 
-    ok, authors_raw = run_checked([
-        "gh", "api",
-        f"repos/{{owner}}/{{repo}}/compare/{default_branch}...{branch}",
-        "-q", ".commits[].author.login",
-    ])
+    ok, authors_raw = run_checked(
+        [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/compare/{default_branch}...{branch}",
+            "-q",
+            ".commits[] | (.author.login // .committer.login // empty)",
+        ]
+    )
     if not ok:
         deny(
             f"Cannot verify branch ownership for '{branch}': "

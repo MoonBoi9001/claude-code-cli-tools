@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Tests for block-push-others-branch.py hook."""
+
 import json
 import os
+from pathlib import Path
 import shutil
 import stat
 import subprocess
 import tempfile
 import unittest
 
-HOOKS_DIR = "/Users/samuel/.claude/hooks"
-HOOK_PATH = f"{HOOKS_DIR}/block-push-others-branch.py"
+HOOKS_DIR = str(Path(__file__).resolve().parent)
+HOOK_PATH = str(Path(HOOKS_DIR) / "block-push-others-branch.py")
 
 
 def run_hook(input_data, env=None):
@@ -38,11 +40,13 @@ class TestPassThrough(unittest.TestCase):
     """Cases that should always exit 0 (pass through) without calling git/gh."""
 
     def test_non_bash_tool(self):
-        proc = run_hook({
-            "tool_name": "Write",
-            "hook_event_name": "PreToolUse",
-            "tool_input": {"file_path": "/tmp/test"},
-        })
+        proc = run_hook(
+            {
+                "tool_name": "Write",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"file_path": "/tmp/test"},
+            }
+        )
         self.assertEqual(proc.returncode, 0)
 
     def test_wrong_event_type(self):
@@ -81,18 +85,29 @@ class TestBlockingWithMocks(unittest.TestCase):
             f.write(content)
         os.chmod(path, stat.S_IRWXU)
 
-    def _setup_mocks(self, branch="feat/their-feature", remote_exists=True,
-                     username="samuel", default_branch="main", authors="other-user"):
+    def _setup_mocks(
+        self,
+        branch="feat/their-feature",
+        remote_exists=True,
+        username="samuel",
+        default_branch="main",
+        authors="other-user",
+    ):
         ls_remote = f"abc123\trefs/heads/{branch}" if remote_exists else ""
-        self._write_script("git", f"""#!/usr/bin/env bash
+        self._write_script(
+            "git",
+            f"""#!/usr/bin/env bash
 if [[ "$1" == "symbolic-ref" ]]; then
     echo "{branch}"
 elif [[ "$1" == "ls-remote" ]]; then
     {"echo '" + ls_remote + "'" if remote_exists else "true"}
 fi
 exit 0
-""")
-        self._write_script("gh", f"""#!/usr/bin/env bash
+""",
+        )
+        self._write_script(
+            "gh",
+            f"""#!/usr/bin/env bash
 if [[ "$2" == "user" ]]; then
     echo "{username}"
 elif [[ "$2" == *"compare"* ]]; then
@@ -101,7 +116,8 @@ else
     echo "{default_branch}"
 fi
 exit 0
-""")
+""",
+        )
 
     def _run(self, input_data=None):
         env = {"PATH": f"{self.mock_dir}:{os.environ.get('PATH', '')}"}
@@ -146,7 +162,9 @@ exit 0
         self.assertEqual(proc.returncode, 0)
 
     def test_allows_when_user_among_multiple_authors(self):
-        self._setup_mocks(branch="feat/collab", authors="other-user\nsamuel\nthird-user")
+        self._setup_mocks(
+            branch="feat/collab", authors="other-user\nsamuel\nthird-user"
+        )
         proc = self._run()
         self.assertEqual(proc.returncode, 0)
 
@@ -174,13 +192,16 @@ exit 0
         """Fails closed when gh can't fetch branch authors (e.g. network glitch)."""
         self._setup_mocks(branch="feat/their-feature", authors="other-user")
         # gh succeeds for user lookup but fails for compare
-        self._write_script("gh", """#!/usr/bin/env bash
+        self._write_script(
+            "gh",
+            """#!/usr/bin/env bash
 if [[ "$2" == "user" ]]; then
     echo "samuel"
     exit 0
 fi
 exit 1
-""")
+""",
+        )
         proc = self._run()
         self.assertEqual(proc.returncode, 2)
         self.assertIn("failed to fetch commit authors", proc.stderr)
@@ -190,14 +211,17 @@ exit 1
         """Fails open when git ls-remote fails — push will also fail."""
         self._setup_mocks(branch="feat/their-feature", authors="other-user")
         # Overwrite git mock so ls-remote fails (simulating unreachable remote)
-        self._write_script("git", """#!/usr/bin/env bash
+        self._write_script(
+            "git",
+            """#!/usr/bin/env bash
 if [[ "$1" == "symbolic-ref" ]]; then
     echo "feat/their-feature"
 elif [[ "$1" == "ls-remote" ]]; then
     exit 1
 fi
 exit 0
-""")
+""",
+        )
         proc = self._run()
         self.assertEqual(proc.returncode, 0)
 

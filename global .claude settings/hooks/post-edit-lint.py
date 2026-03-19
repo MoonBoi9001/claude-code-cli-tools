@@ -82,8 +82,15 @@ def find_rust_edition(file_path: str) -> str | None:
         cargo_toml = directory / "Cargo.toml"
         if cargo_toml.is_file():
             try:
+                in_package = False
                 for line in cargo_toml.read_text().splitlines():
-                    key, _, value = line.strip().partition("=")
+                    stripped = line.strip()
+                    if stripped.startswith("["):
+                        in_package = stripped == "[package]"
+                        continue
+                    if not in_package:
+                        continue
+                    key, _, value = stripped.partition("=")
                     if key.strip() == "edition":
                         value = value.strip().strip('"').strip("'")
                         if value and value[0].isdigit():

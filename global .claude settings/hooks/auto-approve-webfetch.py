@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Auto-approve all WebFetch tool requests."""
+
 from datetime import datetime
 from pathlib import Path
 import json
@@ -12,13 +13,14 @@ from hook_utils import parse_hook_input, approve, pass_through
 LOG_FILE = Path.home() / ".claude" / "logs" / "webfetch-hook.log"
 
 
-def log(message: str, data: dict = None):
+def log(message: str, data: dict | None = None):
     """Append timestamped log entry."""
     timestamp = datetime.now().isoformat()
     entry = f"[{timestamp}] {message}"
     if data:
         entry += f"\n  {json.dumps(data, indent=2, default=str)}"
     entry += "\n"
+    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG_FILE, "a") as f:
         f.write(entry)
 
@@ -31,12 +33,15 @@ def main():
         log("Failed to parse input - passing through")
         pass_through()
 
-    log("Parsed input", {
-        "tool_name": hook.tool_name,
-        "hook_event": hook.hook_event,
-        "is_permission_request": hook.is_permission_request,
-        "tool_input": hook.tool_input,
-    })
+    log(
+        "Parsed input",
+        {
+            "tool_name": hook.tool_name,
+            "hook_event": hook.hook_event,
+            "is_permission_request": hook.is_permission_request,
+            "tool_input": hook.tool_input,
+        },
+    )
 
     if hook.is_permission_request and hook.tool_name == "WebFetch":
         log("Approving WebFetch request")

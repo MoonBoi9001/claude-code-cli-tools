@@ -31,4 +31,4 @@
 
 ## Memories
 
-- Do not write new memories without fist asking the user.
+- Do not write new memories without first asking the user.

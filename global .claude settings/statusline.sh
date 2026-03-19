@@ -61,7 +61,7 @@ extract_json_string() {
   
   # Try to extract string value (quoted)
   local value
-  value=$(echo "$json" | grep -o "\"\${field}\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*:[[:space:]]*"\([^"]*\)".*/\1/')
+  value=$(echo "$json" | grep -o "\"${field}\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed 's/.*:[[:space:]]*"\([^"]*\)".*/\1/')
   
   # Convert escaped backslashes to forward slashes for Windows paths
   if [ -n "$value" ]; then
@@ -70,7 +70,7 @@ extract_json_string() {
   
   # If no string value found, try to extract number value (unquoted)
   if [ -z "$value" ] || [ "$value" = "null" ]; then
-    value=$(echo "$json" | grep -o "\"\${field}\"[[:space:]]*:[[:space:]]*[0-9.]\+" | head -1 | sed 's/.*:[[:space:]]*\([0-9.]\+\).*/\1/')
+    value=$(echo "$json" | grep -o "\"${field}\"[[:space:]]*:[[:space:]]*[0-9.]\+" | head -1 | sed 's/.*:[[:space:]]*\([0-9.]\+\).*/\1/')
   fi
   
   # Return value or default

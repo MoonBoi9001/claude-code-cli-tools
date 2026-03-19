@@ -328,6 +328,5 @@
     "swift-lsp@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "max",
-  "statusline": "/Users/samuel/.claude/statusline.sh"
+  "effortLevel": "max"
 }
