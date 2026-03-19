@@ -155,11 +155,18 @@ Before submitting code, verify:
 
 ## Git Workflow
 
+### Commit Messages
+
+- Title: conventional commit format, under 72 characters
+- Body: 1-5 lines max. State what changed and why, not a full essay. Save detailed context for the PR body.
+- Never restate the title in the body
+
 ### Branch Strategy
 
 - **Never push directly to main unless explicitly asked** - All changes must go through pull requests
-- Branch names follow conventional commit types: `<type>/<issue>-description`
-  - `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`
+- Branch names are prefixed with `mb9/` followed by conventional commit types: `mb9/<type>/<issue>-description`
+  - e.g. `mb9/feat/123-add-auth`, `mb9/fix/456-null-pointer`
+  - Types: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`
 - Use conventional commit messages with issue references
 
 ### Pull Request Process

@@ -9,9 +9,10 @@ self-corrects.
 Supported languages:
   Python  — ruff format + ruff check
   TS/JS   — prettier/biome format + eslint/biome lint
-  Rust    — rustfmt
+  Rust    — rustfmt (edition-aware via Cargo.toml)
   Shell   — shfmt format + shellcheck
 """
+
 import os
 import shutil
 import subprocess
@@ -22,10 +23,20 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from hook_utils import parse_hook_input, deny, pass_through
 
-SKIP_DIRS = frozenset({
-    "node_modules", ".git", "target", "dist", "build",
-    "__pycache__", ".venv", "venv", ".next", ".turbo",
-})
+SKIP_DIRS = frozenset(
+    {
+        "node_modules",
+        ".git",
+        "target",
+        "dist",
+        "build",
+        "__pycache__",
+        ".venv",
+        "venv",
+        ".next",
+        ".turbo",
+    }
+)
 
 TOOL_TIMEOUT = 10
 
@@ -44,10 +55,50 @@ def run_tool(args: list[str]) -> subprocess.CompletedProcess:
     """Run a tool with timeout. Returns a zero-exit result on failure."""
     try:
         return subprocess.run(
-            args, capture_output=True, text=True, timeout=TOOL_TIMEOUT,
+            args,
+            capture_output=True,
+            text=True,
+            timeout=TOOL_TIMEOUT,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return subprocess.CompletedProcess(args, 0, "", "")
+
+
+def get_rustfmt_cmd() -> list[str]:
+    """Get the rustfmt command, preferring nightly when available."""
+    if has_tool("rustup"):
+        result = run_tool(["rustup", "which", "--toolchain", "nightly", "rustfmt"])
+        if result.returncode == 0 and result.stdout.strip():
+            return [result.stdout.strip()]
+    if has_tool("rustfmt"):
+        return ["rustfmt"]
+    return []
+
+
+def find_rust_edition(file_path: str) -> str | None:
+    """Walk up from file to find the Rust edition in Cargo.toml."""
+    directory = Path(file_path).parent
+    while directory != directory.parent:
+        cargo_toml = directory / "Cargo.toml"
+        if cargo_toml.is_file():
+            try:
+                in_package = False
+                for line in cargo_toml.read_text().splitlines():
+                    stripped = line.strip()
+                    if stripped.startswith("["):
+                        in_package = stripped == "[package]"
+                        continue
+                    if not in_package:
+                        continue
+                    key, _, value = stripped.partition("=")
+                    if key.strip() == "edition":
+                        value = value.strip().strip('"').strip("'")
+                        if value and value[0].isdigit():
+                            return value
+            except OSError:
+                pass
+        directory = directory.parent
+    return None
 
 
 def format_and_lint(file_path: str) -> str | None:
@@ -61,7 +112,9 @@ def format_and_lint(file_path: str) -> str | None:
     if ext == ".py":
         if has_tool("ruff"):
             run_tool(["ruff", "format", "--quiet", file_path])
-            result = run_tool(["ruff", "check", "--output-format", "concise", file_path])
+            result = run_tool(
+                ["ruff", "check", "--output-format", "concise", file_path]
+            )
             if result.returncode != 0 and result.stdout.strip():
                 return result.stdout.strip()
 
@@ -86,8 +139,14 @@ def format_and_lint(file_path: str) -> str | None:
                     return output
 
     elif ext == ".rs":
-        if has_tool("rustfmt"):
-            run_tool(["rustfmt", "--quiet", file_path])
+        rustfmt = get_rustfmt_cmd()
+        if rustfmt:
+            cmd = [*rustfmt, "--quiet"]
+            edition = find_rust_edition(file_path)
+            if edition:
+                cmd.extend(["--edition", edition])
+            cmd.append(file_path)
+            run_tool(cmd)
 
     elif ext in {".sh", ".bash", ".zsh"}:
         if has_tool("shfmt"):

@@ -7,6 +7,7 @@ Sources detected (most recent wins):
   - /effort <level> commands via <command-args> tags
   - /model output "with <level> effort" via <local-command-stdout> tags
 """
+
 import json
 import os
 import re
@@ -82,6 +83,18 @@ def find_effort(lines):
     return None
 
 
+def get_settings_effort():
+    """Read default effort level from settings.json."""
+    settings_path = os.path.expanduser("~/.claude/settings.json")
+    try:
+        with open(settings_path) as f:
+            settings = json.load(f)
+        level = settings.get("effortLevel", "")
+        return level if level in VALID_LEVELS else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
 def main():
     try:
         data = json.load(sys.stdin)
@@ -94,6 +107,10 @@ def main():
 
     lines = tail_bytes(transcript)
     effort = find_effort(lines)
+
+    # Fall back to settings.json default when no explicit command found
+    if not effort:
+        effort = get_settings_effort()
 
     if effort:
         try:

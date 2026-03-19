@@ -1,4 +1,10 @@
 {
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
+    "CLAUDE_CODE_EFFORT_LEVEL": "max"
+  },
   "permissions": {
     "allow": [
       "Bash(apt list:*)",
@@ -185,10 +191,6 @@
       "Read(**/.env.test)"
     ]
   },
-  "env": {
-    "ENABLE_TOOL_SEARCH": "true"
-  },
-  "model": "opus",
   "hooks": {
     "PermissionRequest": [
       {
@@ -237,17 +239,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/samuel/.claude/hooks/post-edit-lint.py"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Read|Write|Edit|Bash|Glob|Grep",
@@ -286,12 +277,31 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/post-edit-lint.py"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "afplay ~/.claude/claude_sound.mp3 &"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/detect-effort-level.py"
           }
         ]
       }
@@ -314,8 +324,9 @@
     "padding": 0
   },
   "enabledPlugins": {
-    "rust-analyzer-lsp@claude-plugins-official": true
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true
   },
   "alwaysThinkingEnabled": true,
-  "statusline": "/Users/samuel/.claude/statusline.sh"
+  "effortLevel": "max"
 }
