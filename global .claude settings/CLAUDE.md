@@ -4,6 +4,8 @@
 
 @CODING-STANDARDS.md
 
+@pre-existing-error-guidance.md
+
 ## Rules
 
 - Every fix should address both the immediate symptom and the underlying pattern that caused it — don't just patch the surface, make the system robust against the same class of issue recurring
