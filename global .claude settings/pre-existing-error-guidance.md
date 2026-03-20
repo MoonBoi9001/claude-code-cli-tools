@@ -1,5 +1,7 @@
 # Pre-existing Error Guidance
 
-**Pre-existing issues are not invisible.** When you encounter warnings, lint errors, test failures, or other issues during your work, do not reflexively classify them as "pre-existing" and move on. "Pre-existing" describes when something was introduced, not whether it matters.
+When a lint hook, test run, or build step reports errors, handle every error — not just the ones your edit introduced.
 
-If you can fix it in a few minutes -- a lint warning, a dead import, a type hint, a shellcheck issue -- fix it. You're already in the code. If it's larger than that, flag it clearly rather than burying it in a reassuring "all pre-existing" dismissal. Never use "pre-existing" as a reason to ignore a problem; use it only as factual context when explaining what a change did and didn't introduce.
+- **Fixable in ~2 minutes** (unused imports, sort order, dead variables, type hints, shellcheck issues): fix them immediately. You are already in the code.
+- **Larger issues**: flag each one explicitly to the user with enough context to act on later. Do not group them under a blanket "pre-existing" dismissal.
+- **Never say "pre-existing" and move on.** "Pre-existing" describes when something was introduced, not whether it matters. Use the word only as factual context when explaining what your change did and did not introduce — never as a reason to ignore a problem.
