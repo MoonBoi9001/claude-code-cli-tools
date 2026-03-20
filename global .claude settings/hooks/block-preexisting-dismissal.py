@@ -76,7 +76,7 @@ def find_last_assistant_message(lines):
 def main():
     try:
         data = json.load(sys.stdin)
-    except (json.JSONDecodeError, EOFError):
+    except json.JSONDecodeError:
         return
 
     if data.get("stop_hook_active", False):
