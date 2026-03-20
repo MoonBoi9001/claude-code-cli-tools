@@ -304,6 +304,14 @@
             "command": "/Users/samuel/.claude/hooks/detect-effort-level.py"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/samuel/.claude/hooks/block-preexisting-dismissal.py"
+          }
+        ]
       }
     ],
     "Notification": [
