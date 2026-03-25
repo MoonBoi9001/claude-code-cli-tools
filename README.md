@@ -67,11 +67,31 @@ global .claude settings/
      |- claude-wrapper.sh          wrapper with health check
      '- claude-health-check.sh
 
-skills/
- |- agent-teams/SKILL.md           coordinated agent squads
- |- subagent-guide/SKILL.md        subagent prompt engineering
- |- ansi-table/SKILL.md            terminal table rendering
- '- create-skill/SKILL.md          skill authoring guide
+skills/                               symlinked to ~/.claude/skills
+ |- agent-teams/                      coordinated agent squads
+ |- ansi-table/                       terminal table rendering
+ |- land-pr/                          merge PR, clean up branch
+ |- ralph-loop/                       autonomous bubblewrap iteration
+ |- rust-skills/                      179 Rust coding rules
+ |- subagent-guide/                   subagent prompt engineering
+ |
+ |- algorithmic-art/                  generative art with p5.js
+ |- brand-guidelines/                 Anthropic brand colours/typography
+ |- canvas-design/                    visual art in .png/.pdf
+ |- claude-api/                       Claude API / Anthropic SDK
+ |- doc-coauthoring/                  co-authoring docs and specs
+ |- docx/                             Word document manipulation
+ |- frontend-design/                  production-grade UI design
+ |- internal-comms/                   newsletters, FAQs, updates
+ |- mcp-builder/                      MCP server creation
+ |- pdf/                              PDF read/write/merge/OCR
+ |- pptx/                             PowerPoint manipulation
+ |- skill-creator/                    skill authoring with eval loop
+ |- slack-gif-creator/                animated GIFs for Slack
+ |- theme-factory/                    styling toolkit with presets
+ |- web-artifacts-builder/            React/Vite/Tailwind artifacts
+ |- webapp-testing/                   Playwright web testing
+ '- xlsx/                             spreadsheet manipulation
 ```
 
 </details>
@@ -131,6 +151,8 @@ Skills stay out of context until Claude determines they match the current task, 
 
 <br/>
 
+**Custom skills** built for this workflow:
+
 <table>
 <tr>
 <td width="20"></td>
@@ -155,8 +177,76 @@ Skills stay out of context until Claude determines they match the current task, 
 <tr><td colspan="4"></td></tr>
 <tr>
 <td></td>
-<td><code>create-skill</code></td>
-<td>Meta-skill for authoring new skills. Walks through placement, frontmatter, description writing, and troubleshooting undertriggering.</td>
+<td><code>land-pr</code></td>
+<td>Merges the current PR (squash or rebase), deletes the branch, checks out main, and pulls. Invoked manually with <kbd>/land-pr</kbd>.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>ralph-loop</code></td>
+<td>Autonomous coding workflow where Claude runs inside a bubblewrap sandbox with iterative execution until acceptance criteria are met.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>rust-skills</code></td>
+<td>179 Rust-specific coding rules across 14 categories: ownership, error handling, async patterns, API design, memory optimisation, performance, testing, and common anti-patterns.</td>
+<td></td>
+</tr>
+</table>
+
+<br/>
+
+**Vendored from <a href="https://github.com/anthropics/skills">anthropics/skills</a>** (Apache 2.0):
+
+<table>
+<tr>
+<td width="20"></td>
+<td width="180"><code>skill-creator</code></td>
+<td>Full skill authoring workflow with eval loop, benchmarking, description optimisation, and blind A/B comparison.</td>
+<td width="20"></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>claude-api</code></td>
+<td>Claude API and Anthropic SDK reference for Python, TypeScript, Java, Go, Ruby, C#, and PHP.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>pdf</code> &middot; <code>docx</code> &middot; <code>pptx</code> &middot; <code>xlsx</code></td>
+<td>Document processing -- read, write, merge, split, fill forms, track changes, validate schemas.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>frontend-design</code></td>
+<td>Production-grade frontend interfaces with bold aesthetic direction, avoiding generic AI aesthetics.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>mcp-builder</code></td>
+<td>MCP server creation guide covering Python (FastMCP) and TypeScript (MCP SDK) with evaluation scripts.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td><code>webapp-testing</code></td>
+<td>Playwright-based web application testing with helper scripts and screenshot/logging capabilities.</td>
+<td></td>
+</tr>
+<tr><td colspan="4"></td></tr>
+<tr>
+<td></td>
+<td colspan="2"><code>canvas-design</code> &middot; <code>algorithmic-art</code> &middot; <code>brand-guidelines</code> &middot; <code>theme-factory</code> &middot; <code>web-artifacts-builder</code> &middot; <code>doc-coauthoring</code> &middot; <code>internal-comms</code> &middot; <code>slack-gif-creator</code></td>
 <td></td>
 </tr>
 </table>
@@ -241,13 +331,12 @@ cd claude-code-cli-tools
 # Global settings
 cp -ri "global .claude settings/." ~/.claude/
 
-# Skills
-mkdir -p ~/.claude/skills
-cp -r skills/* ~/.claude/skills/
+# Skills (symlink so updates take effect immediately)
+ln -sfn "$(pwd)/skills" ~/.claude/skills
 ```
 
 > [!NOTE]
-> The `-i` flag prompts before overwriting existing files. Restart Claude Code after copying.
+> The `-i` flag prompts before overwriting existing files. The skills symlink means edits to `skills/` in the repo are live immediately -- no re-copying needed. Restart Claude Code after initial setup.
 
 <br/>
 <img src=".github/assets/divider.svg" width="100%" height="12">
@@ -255,7 +344,7 @@ cp -r skills/* ~/.claude/skills/
 
 ## Making It Yours
 
-This configuration reflects a workflow across blockchain infrastructure, Proxmox homelab management, and web development. The permission lists, hooks, and statusline are tuned for that context -- trim what you don't need, extend what's missing. Hooks toggle individually in `settings.json`. Skills are self-contained directories; remove any, or author new ones with <kbd>/create-skill</kbd>.
+This configuration reflects a workflow across blockchain infrastructure, Proxmox homelab management, and web development. The permission lists, hooks, and statusline are tuned for that context -- trim what you don't need, extend what's missing. Hooks toggle individually in `settings.json`. Skills are self-contained directories; remove any, or author new ones with <kbd>/skill-creator</kbd>. Anthropic skills are vendored from <a href="https://github.com/anthropics/skills">anthropics/skills</a>; to update, pull that repo and re-copy.
 
 <br/>
 
