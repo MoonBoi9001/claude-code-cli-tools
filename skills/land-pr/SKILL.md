@@ -2,7 +2,6 @@
 name: land-pr
 description: Merge the current PR (squash by default, or rebase if specified), delete the branch, checkout main, fetch and pull. Use when the user says "land", "land the PR", "merge the PR", "merge and clean up", "land it", or wants to finish/complete a PR.
 argument-hint: [squash|rebase]
-disable-model-invocation: true
 allowed-tools: Bash
 ---
 
