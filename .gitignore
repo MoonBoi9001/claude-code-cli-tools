@@ -1,3 +1,5 @@
 .DS_Store
 global .claude settings/more settings.json
 __pycache__/
+skills/*/.venv/
+skills/*/.git/
