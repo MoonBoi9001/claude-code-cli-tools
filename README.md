@@ -72,7 +72,6 @@ skills/                               symlinked to ~/.claude/skills
  |- ansi-table/                       terminal table rendering
  |- land-pr/                          merge PR, clean up branch
  |- ralph-loop/                       autonomous bubblewrap iteration
- |- rust-skills/                      179 Rust coding rules
  |- subagent-guide/                   subagent prompt engineering
  |
  |- algorithmic-art/                  generative art with p5.js
@@ -186,13 +185,6 @@ Skills stay out of context until Claude determines they match the current task, 
 <td></td>
 <td><code>ralph-loop</code></td>
 <td>Autonomous coding workflow where Claude runs inside a bubblewrap sandbox with iterative execution until acceptance criteria are met.</td>
-<td></td>
-</tr>
-<tr><td colspan="4"></td></tr>
-<tr>
-<td></td>
-<td><code>rust-skills</code></td>
-<td>179 Rust-specific coding rules across 14 categories: ownership, error handling, async patterns, API design, memory optimisation, performance, testing, and common anti-patterns.</td>
 <td></td>
 </tr>
 </table>
