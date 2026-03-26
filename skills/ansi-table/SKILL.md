@@ -1,10 +1,11 @@
 ---
 name: ansi-table
 description: >
-  Present tabular data as color-coded ANSI tables in the terminal. Use when the user asks to
-  display, visualise, or print data from CSV, parquet, dataframes, or any structured data source
-  as a formatted table. Also trigger when presenting analysis results, sweep matrices, comparison
-  grids, or monthly/yearly breakdowns.
+  Render new ANSI tables in the terminal from a data source. Use ONLY when the user asks you to
+  CREATE, DISPLAY, or PRINT tabular data from CSV, parquet, dataframes, or structured data as a
+  formatted table. Also trigger when presenting analysis results, sweep matrices, comparison grids,
+  or monthly/yearly breakdowns. Do NOT trigger when the user merely references, discusses, or asks
+  questions about an existing table already shown in the conversation.
 allowed-tools:
   - Bash
   - Read
