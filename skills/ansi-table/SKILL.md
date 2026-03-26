@@ -1,11 +1,6 @@
 ---
 name: ansi-table
-description: >
-  Render new ANSI tables in the terminal from a data source. Use ONLY when the user asks you to
-  CREATE, DISPLAY, or PRINT tabular data from CSV, parquet, dataframes, or structured data as a
-  formatted table. Also trigger when presenting analysis results, sweep matrices, comparison grids,
-  or monthly/yearly breakdowns. Do NOT trigger when the user merely references, discusses, or asks
-  questions about an existing table already shown in the conversation.
+description: Render new ANSI tables from a data source. Trigger ONLY when asked to CREATE/DISPLAY/PRINT tabular data (CSV, parquet, dataframes, analysis results, sweep matrices, grids). Do NOT trigger when merely referencing or discussing an existing table.
 allowed-tools:
   - Bash
   - Read
