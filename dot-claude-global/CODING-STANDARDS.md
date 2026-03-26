@@ -158,20 +158,19 @@ Before submitting code, verify:
 ### Commit Messages
 
 - Title: conventional commit format, under 72 characters
-- Body: 1-5 lines max. State what changed and why, not a full essay. Save detailed context for the PR body.
+- Body: 1-5 lines max, wrap at 125 characters. State what changed and why, not a full essay. Save detailed context for the PR body.
 - Never restate the title in the body
 
 ### Branch Strategy
 
 - **Never push directly to main unless explicitly asked** - All changes must go through pull requests
-- Branch names are prefixed with `mb9/` followed by conventional commit types: `mb9/<type>/<issue>-description`
-  - e.g. `mb9/feat/123-add-auth`, `mb9/fix/456-null-pointer`
-  - Types: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`
+- Branch names MUST use the `mb9/` prefix: `mb9/<laymens-description>`
+  - Descriptions should be readable without codebase context — prefer slightly verbose plain English over terse developer shorthand (e.g. `add-login-authentication` not `add-auth`, `fix-dashboard-loading-crash` not `fix-null-pointer`)
+  - e.g. `mb9/add-login-authentication`, `mb9/fix-dashboard-loading-crash`
 - Use conventional commit messages with issue references
 
-### Pull Request Process
+### PR Sizing
 
-1. Create branch from main
-2. Make commits on branch
-3. Push branch and create PR
-4. Wait for review/approval before merging
+Prefer small, incremental PRs over large feature-complete ones. A PR that touches 5+ files or introduces a full feature in one shot is hard to review — split it into smaller logical changesets that each make sense on their own. Each PR should represent one coherent step: a new type, a migration, a single behaviour change. Reviewers can move faster through a stack of focused PRs than one sprawling diff.
+
+When working with coding agents, this matters even more — agents can produce large changesets quickly, but the review bottleneck remains human. Structure the work so each PR is reviewable in a single sitting.
