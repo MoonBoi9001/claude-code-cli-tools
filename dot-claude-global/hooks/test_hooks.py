@@ -22,10 +22,10 @@ def test_hook(hook_path, input_data, expected_output=True, description=""):
     return passed
 
 
-def test_block_hook(input_data, should_block, description):
-    """Test block-env-files hook."""
+def test_pretool_hook(hook_name, input_data, should_block, description):
+    """Test a PreToolUse hook that blocks (exit 2) or passes through."""
     proc = subprocess.run(
-        ["python3", f"{HOOKS_DIR}/block-env-files.py"],
+        ["python3", f"{HOOKS_DIR}/{hook_name}"],
         input=json.dumps(input_data),
         capture_output=True,
         text=True,
@@ -34,6 +34,13 @@ def test_block_hook(input_data, should_block, description):
     passed = blocked == should_block
     print(f"{'PASS' if passed else 'FAIL'}: {description}")
     return passed
+
+
+def test_block_hook(input_data, should_block, description):
+    """Test block-env-files hook."""
+    return test_pretool_hook(
+        "block-env-files.py", input_data, should_block, description
+    )
 
 
 def main():
@@ -312,6 +319,181 @@ def main():
             },
             True,
             "blocks bash cat .env",
+        )
+    )
+
+    # Bash: source .env blocked, source .environment allowed
+    results.append(
+        test_block_hook(
+            {
+                "tool_name": "Bash",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"command": "source .environment"},
+            },
+            False,
+            "allows bash source .environment",
+        )
+    )
+
+    source_env = "source ." + "en" + "v"
+    results.append(
+        test_block_hook(
+            {
+                "tool_name": "Bash",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"command": source_env},
+            },
+            True,
+            "blocks bash source .env",
+        )
+    )
+
+    # .env.example should be allowed (safe template)
+    env_example = "/tmp/." + "en" + "v.example"
+    results.append(
+        test_block_hook(
+            {
+                "tool_name": "Read",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"file_path": env_example},
+            },
+            False,
+            "allows .env.example (safe template)",
+        )
+    )
+
+    # SSH private key blocked, config allowed
+    results.append(
+        test_block_hook(
+            {
+                "tool_name": "Read",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"file_path": "/Users/samuel/.ssh/id_ed25519"},
+            },
+            True,
+            "blocks SSH private key",
+        )
+    )
+
+    # =========================================================================
+    # block-force-push.py
+    # =========================================================================
+    print("\n--- block-force-push.py ---")
+
+    def force_push_test(command, should_block, description):
+        return test_pretool_hook(
+            "block-force-push.py",
+            {
+                "tool_name": "Bash",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"command": command},
+            },
+            should_block,
+            description,
+        )
+
+    results.append(force_push_test("git push --force", True, "blocks --force"))
+
+    results.append(force_push_test("git push -f", True, "blocks -f"))
+
+    results.append(
+        force_push_test(
+            "git push origin main --force", True, "blocks --force with remote/branch"
+        )
+    )
+
+    results.append(
+        force_push_test(
+            "git push --force-with-lease", False, "allows --force-with-lease"
+        )
+    )
+
+    results.append(force_push_test("git push origin main", False, "allows normal push"))
+
+    results.append(
+        force_push_test("git push -u origin my-branch", False, "allows push with -u")
+    )
+
+    # =========================================================================
+    # block-dangerous-proxmox.py
+    # =========================================================================
+    print("\n--- block-dangerous-proxmox.py ---")
+
+    def proxmox_test(command, should_block, description):
+        return test_pretool_hook(
+            "block-dangerous-proxmox.py",
+            {
+                "tool_name": "Bash",
+                "hook_event_name": "PreToolUse",
+                "tool_input": {"command": command},
+            },
+            should_block,
+            description,
+        )
+
+    results.append(proxmox_test("pct stop 100", True, "blocks pct stop"))
+
+    results.append(proxmox_test("qm stop 200", True, "blocks qm stop"))
+
+    results.append(proxmox_test("pct shutdown 100", False, "allows pct shutdown"))
+
+    results.append(proxmox_test("qm shutdown 200", False, "allows qm shutdown"))
+
+    results.append(
+        proxmox_test("systemctl poweroff", True, "blocks systemctl poweroff")
+    )
+
+    results.append(proxmox_test("reboot", True, "blocks reboot"))
+
+    results.append(
+        proxmox_test("docker compose down", True, "blocks docker compose down")
+    )
+
+    results.append(
+        proxmox_test("docker compose stop", False, "allows docker compose stop")
+    )
+
+    # =========================================================================
+    # auto-approve-edits.py
+    # =========================================================================
+    print("\n--- auto-approve-edits.py ---")
+
+    results.append(
+        test_hook(
+            f"{HOOKS_DIR}/auto-approve-edits.py",
+            {
+                "tool_name": "Edit",
+                "hook_event_name": "PermissionRequest",
+                "tool_input": {"file_path": "/Users/samuel/Documents/github/test.py"},
+            },
+            True,
+            "approves edit in allowed dir",
+        )
+    )
+
+    results.append(
+        test_hook(
+            f"{HOOKS_DIR}/auto-approve-edits.py",
+            {
+                "tool_name": "Write",
+                "hook_event_name": "PermissionRequest",
+                "tool_input": {"file_path": "/Users/samuel/Documents/github/new.py"},
+            },
+            True,
+            "approves write in allowed dir",
+        )
+    )
+
+    results.append(
+        test_hook(
+            f"{HOOKS_DIR}/auto-approve-edits.py",
+            {
+                "tool_name": "Edit",
+                "hook_event_name": "PermissionRequest",
+                "tool_input": {"file_path": "/etc/hosts"},
+            },
+            False,
+            "rejects edit outside allowed dir",
         )
     )
 
