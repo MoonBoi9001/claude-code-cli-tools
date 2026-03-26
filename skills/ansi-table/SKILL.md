@@ -14,11 +14,13 @@ argument-hint: "[path-to-data or description]"
 
 # ANSI Table Presentation
 
-Present tabular data as beautifully formatted, color-coded tables in the terminal using inline Python.
+Present tabular data as beautifully formatted, color-coded tables in the terminal.
+
+**IMPORTANT: Do NOT write a Python script file.** Always render the table directly with a single `Bash(python3 -c "...")` call. Never use the Write tool to create a .py file and then run it.
 
 ## Principles
 
-- Keep analysis scripts producing clean data (CSV/parquet). Do presentation formatting in separate inline Python (`python3 -c "..."`) so the data pipeline stays reusable.
+- Render tables inline via `python3 -c "..."` in a single Bash call. No script files.
 - Always read from the data source (CSV, parquet, JSON) rather than hardcoding values.
 - Use `pandas` for data loading when available; fall back to `csv` stdlib if not.
 
