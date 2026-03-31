@@ -2,8 +2,12 @@
   "env": {
     "ENABLE_TOOL_SEARCH": "true",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
-    "CLAUDE_CODE_EFFORT_LEVEL": "max"
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "256000",
+    "CLAUDE_CODE_EFFORT_LEVEL": "max",
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "true",
+    "MAX_THINKING_TOKENS": "128000",
+    "CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY": "25",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "opus[1m]"
   },
   "permissions": {
     "allow": [
@@ -239,7 +243,20 @@
       "Bash(ruff check:*)",
       "Bash(rustup run:*)",
       "Bash(cargo check:*)",
-      "Bash(cargo fmt:*)"
+      "Bash(cargo fmt:*)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_navigate_back",
+      "mcp__playwright__browser_network_requests",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_tabs",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_wait_for"
     ],
     "deny": [
       "Read(**/.env)",
@@ -251,6 +268,7 @@
     ],
     "defaultMode": "acceptEdits"
   },
+  "model": "opus[1m]",
   "hooks": {
     "PermissionRequest": [
       {
