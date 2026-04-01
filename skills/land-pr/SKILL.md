@@ -24,19 +24,16 @@ Use `<arg1>` if provided. If not, default to `--squash`. Valid values: `squash`,
    gh pr view --json baseRefName --jq '.baseRefName'
    ```
 
-3. Merge the PR and delete the remote branch:
+3. Merge the PR, delete branches, and switch to the base branch:
    ```
    gh pr merge --<strategy> --delete-branch
    ```
+   `gh pr merge --delete-branch` handles: merging, deleting the remote branch, switching to the base branch, fetching, pulling, and deleting the local branch.
 
-4. Switch to the base branch and pull:
+4. Prune stale remote-tracking references:
    ```
-   git checkout <base-branch> && git fetch --prune && git pull
+   git fetch --prune
    ```
-
-5. Clean up the local branch if it still exists:
-   ```
-   git branch -d <branch-name>
-   ```
+   `gh pr merge` does not prune remote-tracking refs for the deleted branch, so this cleans up the orphaned `origin/<branch>` ref.
 
 If any step fails, stop and report the error rather than continuing.
