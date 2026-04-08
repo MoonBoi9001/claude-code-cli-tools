@@ -3,3 +3,5 @@ global .claude settings/more settings.json
 __pycache__/
 skills/*/.venv/
 skills/*/.git/
+/skills/review-pr/evals
+/skills/review-pr/review-pr-workspace
