@@ -22,6 +22,14 @@ Before implementing any solution, subagents must evaluate whether the proposed a
 
 **Example**: If asked to "enforce a higher minimum allocation for zero-signal subgraphs" in a protocol where zero-signal means zero rewards, the agent should flag: "This doesn't make economic sense — why would we force larger allocations to assets that generate no returns?"
 
+## Worktree Isolation
+
+When launching multiple agents that modify files in the same repo -- especially agents that create branches, switch branches, or edit overlapping files -- **always use `isolation: "worktree"`** on the Agent tool. Without it, concurrent agents share the same working tree and will step on each other: one agent switches branches while another is mid-edit, reverting all uncommitted changes.
+
+**Rule**: If you are launching 2+ background agents against the same repository and any of them will write files or create branches, every agent must use `isolation: "worktree"`. The only exception is if agents are purely read-only (research/exploration).
+
+A single foreground agent does not need a worktree since it has exclusive access to the working tree.
+
 ## Model Selection
 
 Always use the latest available Opus model for subagents. Never use Sonnet or Haiku.
