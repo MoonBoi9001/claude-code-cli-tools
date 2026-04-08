@@ -8,22 +8,20 @@
 
 ## Rules
 
-- Every fix should address both the immediate symptom and the underlying pattern that caused it — don't just patch the surface, make the system robust against the same class of issue recurring
+- Every fix should address the immediate symptom and the underlying pattern — make the system robust against the same class of issue recurring
 - Never use emojis
 - Markdown documents, where possible, should read like a narrative, not a checklist
-- The narrative flow (engaging) structure is typically best and usually suits our writing objectives better. We should make sure never to make unverified claims, or state facts that are disproportionate to the truth. We always focus on surgical accuracy, not overblown hype.
-- Keep ALL data/numbers (surgical accuracy)
-  - Remove robotic formatting
-  - Use transitional phrases between ideas
-  - Write like explaining to a colleague, not filling a form
-  - Keep technical detail, but in prose form
-  - Prefer minimalist language e.g. instead of "carefully adapted" use adapted. Instead of "where Parquet files are organized" use "Parquet files were organised"
-  - Avoid overusing the same word over and over.
-  - Prefer scientific write up style
+- Never make unverified claims or state facts disproportionate to the truth. Surgical accuracy, not overblown hype.
+- Keep ALL data and numbers intact when rewriting or summarising.
+- Write like explaining to a colleague: use transitional phrases, keep technical detail in prose form, prefer minimalist language (e.g. "adapted" not "carefully adapted"). Avoid robotic formatting and repetitive word choices.
 - If I ask you a question and you are not 100% sure, please let me know that you're not sure rather than stating something that could be wrong
 - When working with git operations, always confirm the current working directory before running commands, especially after subshell operations or package installs
 - When analyzing systems or services, be exhaustive — list ALL relevant components. Do not omit services unless explicitly told to scope down
-- Proactively ask the user questions (via the AskUserQuestion tool) — don't wait for a dead end to check in. If there's any ambiguity about approach, scope, or intent, ask rather than assume
+- Default to asking over assuming. Aggressively use AskUserQuestion early and often — before choosing an approach, before scoping work, before making judgment calls. For features or significant changes, propose various approaches with trade-offs and ask which I prefer. Do not start coding until we've agreed on direction.
+
+## Implementation Approach
+- Before claiming work is complete, run the relevant tests/build/lint commands and show the output. No "should pass" or "looks correct" -- evidence before assertions.
+- When debugging, find the root cause before proposing fixes. Read the error, trace the data flow, check recent changes. Do not guess-and-check.
 
 ## PR Body Guidance
 

@@ -1,6 +1,4 @@
-# Coding Standards (coding-standards.md / CODING-STANDARDS.md)
-
-Follow these coding standards when writing code, to ensure that the quality of the code passes what is expected from you.
+# Coding Standards
 
 ## Core Principles
 
@@ -18,7 +16,7 @@ Prefer simple code that repeats over clever code that doesn't.
 
 ### KISS (Keep It Simple, Stupid)
 
-Choose the simplest solution that solves the problem. Avoid premature optimization and over-engineering.
+Choose the simplest solution that solves the problem. Avoid premature optimization and over-engineering. Add complexity only when simplicity creates bugs or performance issues.
 
 ### SOLID
 
@@ -79,7 +77,7 @@ Apply domain knowledge to validate solutions. A feature that sounds reasonable m
 
 ### TDD (Test-Driven Development)
 
-Ideally, write tests BEFORE implementation, following red-green-refactor.
+Write tests BEFORE implementation, following red-green-refactor.
 
 ### AAA (Arrange, Act, Assert)
 
@@ -115,43 +113,15 @@ Code that swallows errors and continues is code that can be broken for weeks wit
 
 **Distinguish expected absence from unexpected failure.** A missing optional config is a DEBUG log. A crashed dependency is a WARNING or ERROR.
 
-## Code Review Checklist
-
-Before submitting code, verify:
-
-- [ ] Repetition justified or abstracted (DRY)
-- [ ] Simplest solution chosen (KISS)
-- [ ] Single responsibility per class/function
-- [ ] Tests written first or alongside code
-- [ ] All tests follow AAA structure
-- [ ] Tests are FIRST compliant
-- [ ] Input validation fails fast
-- [ ] Dependencies injected, not hardcoded
-- [ ] No blocking calls in async code
-- [ ] No secrets hardcoded
-- [ ] External input validated at boundaries
-- [ ] Fallback paths are observable (metrics, structured logs, health status)
-
-## When to Break Rules
-
-**KISS**: Add complexity when simplicity creates bugs or performance issues.
-
 ## Red Flags
 
 - High cyclomatic complexity
 - Deep nesting
-- Test files without AAA
-- Missing error handling
 - Hardcoded config
 - No type hints/types
-- Classes doing too many unrelated things
-- Tight coupling
 - Dead code
-- Blocking calls in async functions
 - Loops that issue one query per iteration
 - Comments that contradict code
-- Silent fallbacks (`except: return default` without logging or metrics)
-- Degradation paths with no observability
 
 ## Git Workflow
 
