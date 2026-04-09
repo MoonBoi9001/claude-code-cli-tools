@@ -190,6 +190,10 @@ if [ "$HAS_JQ" -eq 1 ]; then
 
   if [ "$cache_stale" -eq 1 ]; then
     token=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
+    # Linux fallback: read from credentials file
+    if [ -z "$token" ] && [ -f "$HOME/.claude/.credentials.json" ]; then
+      token=$(jq -r '.claudeAiOauth.accessToken // empty' "$HOME/.claude/.credentials.json" 2>/dev/null)
+    fi
     if [ -n "$token" ]; then
       usage_json=$(curl -s --max-time 3 -H "Authorization: Bearer $token" -H "anthropic-beta: oauth-2025-04-20" "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
       if echo "$usage_json" | jq -e '.five_hour' >/dev/null 2>&1; then
@@ -208,7 +212,7 @@ if [ "$HAS_JQ" -eq 1 ]; then
     if [ -n "$five_hour_reset_raw" ]; then
       five_hour_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${five_hour_reset_raw%%.*}" +%s 2>/dev/null || date -d "${five_hour_reset_raw}" +%s 2>/dev/null)
       if [ -n "$five_hour_epoch" ]; then
-        five_hour_reset=$(date -r "$five_hour_epoch" +"%-l:%M%p" 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d '.')
+        five_hour_reset=$(date -r "$five_hour_epoch" +"%-l:%M%p" 2>/dev/null || date -d "@$five_hour_epoch" +"%-l:%M%p" 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr -d '.')
         five_hour_reset="${five_hour_reset/:00am/am}"
         five_hour_reset="${five_hour_reset/:00pm/pm}"
       fi
@@ -216,7 +220,7 @@ if [ "$HAS_JQ" -eq 1 ]; then
     if [ -n "$seven_day_reset_raw" ]; then
       seven_day_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${seven_day_reset_raw%%.*}" +%s 2>/dev/null || date -d "${seven_day_reset_raw}" +%s 2>/dev/null)
       if [ -n "$seven_day_epoch" ]; then
-        seven_day_reset=$(date -r "$seven_day_epoch" +"%b %-d %-l:%M%p" 2>/dev/null | tr -d '.' | sed 's/AM/am/;s/PM/pm/')
+        seven_day_reset=$(date -r "$seven_day_epoch" +"%b %-d %-l:%M%p" 2>/dev/null || date -d "@$seven_day_epoch" +"%b %-d %-l:%M%p" 2>/dev/null | tr -d '.' | sed 's/AM/am/;s/PM/pm/')
         seven_day_reset="${seven_day_reset/:00am/am}"
         seven_day_reset="${seven_day_reset/:00pm/pm}"
       fi
