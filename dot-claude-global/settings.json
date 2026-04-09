@@ -190,12 +190,12 @@
       "WebSearch",
       "Bash(brew install openssl 2>&1 | tail -20)",
       "Bash(docker manifest inspect ghcr.io/edgeandnode/dipper-service:latest 2>&1 | head -5)",
-      "Bash(cd /Users/samuel/Documents/github/contracts && rm -rf node_modules packages/*/node_modules pnpm-lock.yaml && pnpm install && pnpm build)",
+      "Bash(cd ~/Documents/github/contracts && rm -rf node_modules packages/*/node_modules pnpm-lock.yaml && pnpm install && pnpm build)",
       "Bash(docker compose up -d 2>&1)",
-      "Bash(cd /Users/samuel/Documents/github/local-network && docker compose up -d 2>&1)",
+      "Bash(cd ~/Documents/github/local-network && docker compose up -d 2>&1)",
       "Bash(docker compose up -d indexer-service 2>&1 && sleep 2 && docker exec indexer-service ls -la /opt/config/ 2>&1 && docker exec indexer-service wc -l /opt/config/.env 2>&1)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose ps dipper --format \"table {{.Name}}\\\\t{{.Status}}\")",
-      "Bash(cd /Users/samuel/Documents/github/dipper && cargo clippy --workspace --all-targets 2>&1 | tail -10)",
+      "Bash(cd ~/Documents/github/dipper && cargo clippy --workspace --all-targets 2>&1 | tail -10)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml exec indexer-agent jq '.[\"1337\"].RecurringCollector' /opt/config/horizon.json 2>&1)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml ps -a start-indexing --format '{{.Status}}' 2>&1)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml restart tap-escrow-manager 2>&1)",
@@ -204,10 +204,10 @@
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml logs graph-contracts 2>&1 | tail -80)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml logs tap-escrow-manager 2>&1 | tail -10)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml up -d 2>&1 | tail -20)",
-      "Bash(cd /Users/samuel/Documents/github/dipper && ./target/release/dipper-cli indexings list --help 2>&1)",
-      "Bash(cd /Users/samuel/Documents/github/dipper && ./target/release/dipper-cli indexings status --help 2>&1)",
+      "Bash(cd ~/Documents/github/dipper && ./target/release/dipper-cli indexings list --help 2>&1)",
+      "Bash(cd ~/Documents/github/dipper && ./target/release/dipper-cli indexings status --help 2>&1)",
       "Bash(docker builder prune -f 2>&1 | tail -5)",
-      "Bash(cd /Users/samuel/Documents/github/dipper && cargo check -p dipper-service 2>&1 | tail -5)",
+      "Bash(cd ~/Documents/github/dipper && cargo check -p dipper-service 2>&1 | tail -5)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml down -v 2>&1)",
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml logs tap-escrow-manager --since 30s 2>&1 | grep -i \"authorized\\\\|deposit\\\\|error\")",
       "Bash(python3 scripts/network-status.py 2>&1)",
@@ -226,19 +226,19 @@
       "Bash(DOCKER_DEFAULT_PLATFORM= docker compose -f docker-compose.yaml -f compose/dev/dips.yaml -f compose/extra-indexers.yaml down -v 2>&1)",
       "Bash(docker ps -a --format '{{.Names}}' | grep -E '\\(postgres|graph-node|indexer-agent|indexer-service|tap-agent\\)-[0-9]+' | xargs -r docker rm -f 2>&1)",
       "Bash(pip3 install mnemonic eth_account 2>&1 | tail -5)",
-      "Read(//Users/samuel/Documents/github/dipper/**)",
+      "Read(~/Documents/github/dipper/**)",
       "Bash(cargo build:*)",
-      "Read(//Users/samuel/Documents/github/subgraph-dips-indexer-selection/**)",
+      "Read(~/Documents/github/subgraph-dips-indexer-selection/**)",
       "Bash(pip install:*)",
       "Bash(python3 -m pytest tests/ -x -q)",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Bash(docker unpause:*)",
       "Bash(foundryup 2>&1 | tail -5)",
-      "Read(//Users/samuel/Documents/github/contracts/packages/subgraph-service/**)",
+      "Read(~/Documents/github/contracts/packages/subgraph-service/**)",
       "Bash(forge build:*)",
-      "Bash(cd /Users/samuel/Documents/github/contracts/packages/subgraph-service && pnpm build:self 2>&1 | tail -15)",
-      "Read(//Users/samuel/Documents/github/contracts/**)",
+      "Bash(cd ~/Documents/github/contracts/packages/subgraph-service && pnpm build:self 2>&1 | tail -15)",
+      "Read(~/Documents/github/contracts/**)",
       "Bash(pnpm -r run build:self --filter @graphprotocol/subgraph-service)",
       "Bash(cargo test:*)",
       "Bash(SQLX_OFFLINE=true cargo check -p dipper-service)",
@@ -279,7 +279,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/auto-approve-webfetch.py"
+            "command": "~/.claude/hooks/auto-approve-webfetch.py"
           }
         ]
       },
@@ -288,7 +288,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/auto-approve-piped-bash.py"
+            "command": "~/.claude/hooks/auto-approve-piped-bash.py"
           }
         ]
       },
@@ -297,7 +297,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/auto-approve-ssh.py"
+            "command": "~/.claude/hooks/auto-approve-ssh.py"
           }
         ]
       },
@@ -306,7 +306,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/auto-approve-reads.py"
+            "command": "~/.claude/hooks/auto-approve-reads.py"
           }
         ]
       },
@@ -315,7 +315,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/auto-approve-edits.py"
+            "command": "~/.claude/hooks/auto-approve-edits.py"
           }
         ]
       }
@@ -326,7 +326,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/block-env-files.py"
+            "command": "~/.claude/hooks/block-env-files.py"
           }
         ]
       },
@@ -335,7 +335,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/block-dangerous-proxmox.py"
+            "command": "~/.claude/hooks/block-dangerous-proxmox.py"
           }
         ]
       },
@@ -344,7 +344,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/block-force-push.py"
+            "command": "~/.claude/hooks/block-force-push.py"
           }
         ]
       },
@@ -353,7 +353,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/block-push-others-branch.py"
+            "command": "~/.claude/hooks/block-push-others-branch.py"
           }
         ]
       }
@@ -364,7 +364,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/post-edit-lint.py"
+            "command": "~/.claude/hooks/post-edit-lint.py"
           }
         ]
       }
@@ -382,7 +382,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/detect-effort-level.py"
+            "command": "~/.claude/hooks/detect-effort-level.py"
           }
         ]
       },
@@ -390,7 +390,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/samuel/.claude/hooks/block-preexisting-dismissal.py"
+            "command": "~/.claude/hooks/block-preexisting-dismissal.py"
           }
         ]
       }
