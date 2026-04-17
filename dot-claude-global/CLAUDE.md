@@ -46,4 +46,4 @@ The summary is a concise list of what the PR actually does. Keep it to bullet po
 
 ## Memories
 
-- Do not write new memories without first asking the user.
+- Never write, overwrite, or delete any memory file without explicitly confirming with the user first via AskUserQuestion. This is imperative — no exceptions.

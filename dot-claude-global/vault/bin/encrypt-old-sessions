@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Encrypt Claude Code transcript files older than $CUTOFF_DAYS in place.
+# Non-interactive: uses the age public recipient configured in vault-local.
+# Safe to run from SessionStart (idempotent, async-friendly).
+#
+# Setup instructions: see the sibling README.md.
+
+set -euo pipefail
+
+VAULT_LOCAL="${CLAUDE_VAULT_LOCAL_DIR:-$HOME/.claude/vault-local}"
+CONFIG="$VAULT_LOCAL/config.sh"
+
+if [[ ! -r "$CONFIG" ]]; then
+  # No local config — user hasn't set up their own keypair yet.
+  # Exit 0 so SessionStart doesn't fail the session; hint to stderr.
+  echo "claude-vault: no local config at $CONFIG — encryption skipped. See vault/README.md for setup." >&2
+  exit 0
+fi
+
+# shellcheck disable=SC1090
+. "$CONFIG"
+
+CUTOFF_DAYS="${CLAUDE_VAULT_CUTOFF_DAYS:-21}"
+PROJECTS_DIR="${CLAUDE_VAULT_PROJECTS_DIR:-$HOME/.claude/projects}"
+RECIPIENT_FILE="${CLAUDE_VAULT_RECIPIENT:-$VAULT_LOCAL/recipient.txt}"
+LOG_FILE="${CLAUDE_VAULT_LOG:-$VAULT_LOCAL/encrypt.log}"
+DRY_RUN="${CLAUDE_VAULT_DRY_RUN:-0}"
+
+if [[ ! -r "$RECIPIENT_FILE" ]]; then
+  echo "claude-vault: recipient file missing or unreadable: $RECIPIENT_FILE" >&2
+  exit 1
+fi
+RECIPIENT=$(< "$RECIPIENT_FILE")
+if [[ -z "$RECIPIENT" ]]; then
+  echo "Recipient file is empty: $RECIPIENT_FILE" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG_FILE"; }
+
+log "start cutoff=${CUTOFF_DAYS}d dry_run=${DRY_RUN}"
+
+# Serialize concurrent runs (two Claude Code sessions starting in parallel can
+# otherwise race on the same file: both see plaintext exists + .age doesn't,
+# both spawn age -o, age truncates on open so the second writer corrupts the
+# first, then both pass the -s non-empty check and rm the plaintext). mkdir is
+# atomic on POSIX, so the first process that creates $LOCK_DIR wins; others
+# exit cleanly. If a previous run crashed mid-sweep, the lock dir persists —
+# delete $LOCK_DIR manually to clear.
+LOCK_DIR="$VAULT_LOCAL/encrypt.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  log "another run is active (lock at $LOCK_DIR) — skipping"
+  exit 0
+fi
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+
+encrypted=0; skipped=0; failed=0; considered=0
+
+# Process substitution keeps the while-loop in the parent shell so counter
+# updates persist (bash 3.2 on macOS has no mapfile).
+while IFS= read -r -d '' file; do
+  considered=$((considered + 1))
+  out="${file}.age"
+
+  if [[ -e "$out" ]]; then
+    log "skip_existing_age: $file"
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    log "dry_run_would_encrypt: $file"
+    encrypted=$((encrypted + 1))
+    continue
+  fi
+
+  if age -r "$RECIPIENT" -o "$out" "$file" 2>>"$LOG_FILE"; then
+    if [[ -s "$out" ]]; then
+      rm -f -- "$file"
+      log "ok: $file -> $out"
+      encrypted=$((encrypted + 1))
+    else
+      rm -f -- "$out"
+      log "empty_output_aborted: $file"
+      failed=$((failed + 1))
+    fi
+  else
+    rm -f -- "$out"
+    log "encrypt_failed: $file"
+    failed=$((failed + 1))
+  fi
+done < <(
+  find "$PROJECTS_DIR" \
+    \( -name '*.jsonl' -o \( -path '*/tool-results/*' -name '*.txt' \) \) \
+    -type f -mtime +"$CUTOFF_DAYS" -print0
+)
+
+log "done considered=$considered encrypted=$encrypted skipped=$skipped failed=$failed"
