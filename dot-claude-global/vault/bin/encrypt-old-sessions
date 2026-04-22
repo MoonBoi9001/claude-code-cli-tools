@@ -54,18 +54,85 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   log "another run is active (lock at $LOCK_DIR) — skipping"
   exit 0
 fi
-trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
 
-encrypted=0; skipped=0; failed=0; considered=0
+# Reference file whose mtime is exactly CUTOFF_DAYS ago — lets the main loop
+# test "file older than cutoff" with bash's built-in -ot operator, avoiding
+# a find fork per candidate.
+CUTOFF_REF=$(mktemp -t claude-vault-cutoff.XXXXXX)
+if date -u -v-1d +%Y >/dev/null 2>&1; then
+  cutoff_stamp=$(date -u -v-"${CUTOFF_DAYS}"d +%Y%m%d%H%M.%S)
+else
+  cutoff_stamp=$(date -u -d "${CUTOFF_DAYS} days ago" +%Y%m%d%H%M.%S)
+fi
+touch -t "$cutoff_stamp" "$CUTOFF_REF"
+
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true; rm -f -- "${CUTOFF_REF:-}"' EXIT
+
+# Encrypt src -> dst via tmp + atomic rename. Removes src only after the .age
+# is safely in place; on any failure, the existing dst (if any) is preserved
+# and the tmp is cleaned up. Logs under $ok_label on success, $fail_label on
+# encrypt failure, and $fail_label_mv_failed on the rare mv failure path.
+encrypt_to() {
+  local src="$1" dst="$2" ok_label="$3" fail_label="$4"
+  local tmp="${dst}.tmp.$$"
+  if age -r "$RECIPIENT" -o "$tmp" "$src" 2>>"$LOG_FILE" && [[ -s "$tmp" ]]; then
+    if mv -f -- "$tmp" "$dst"; then
+      rm -f -- "$src"
+      log "${ok_label}: $src -> $dst"
+      return 0
+    fi
+    rm -f -- "$tmp"
+    log "${fail_label}_mv_failed: $src"
+    return 1
+  fi
+  rm -f -- "$tmp"
+  log "${fail_label}: $src"
+  return 1
+}
+
+encrypted=0; skipped=0; failed=0; considered=0; reconciled=0
 
 # Process substitution keeps the while-loop in the parent shell so counter
 # updates persist (bash 3.2 on macOS has no mapfile).
+#
+# The find command picks up all candidate plaintext files regardless of age;
+# the cutoff check is applied inline so we can still reconcile recent
+# both-exist cases left behind by decrypt-session.
 while IFS= read -r -d '' file; do
   considered=$((considered + 1))
   out="${file}.age"
 
   if [[ -e "$out" ]]; then
-    log "skip_existing_age: $file"
+    # Plaintext and .age both exist. Use mtime to decide authority:
+    #   plaintext strictly newer  -> treat as edited content, re-encrypt
+    #   otherwise                 -> treat as stale decrypt artifact, drop it
+    if [[ "$file" -nt "$out" ]]; then
+      if [[ "$DRY_RUN" == "1" ]]; then
+        log "dry_run_would_reencrypt: $file"
+        reconciled=$((reconciled + 1))
+        continue
+      fi
+      if encrypt_to "$file" "$out" "reencrypted" "reencrypt_failed"; then
+        reconciled=$((reconciled + 1))
+      else
+        failed=$((failed + 1))
+      fi
+    else
+      if [[ "$DRY_RUN" == "1" ]]; then
+        log "dry_run_would_drop_stale_plaintext: $file"
+        reconciled=$((reconciled + 1))
+        continue
+      fi
+      rm -f -- "$file"
+      log "dropped_stale_plaintext: $file"
+      reconciled=$((reconciled + 1))
+    fi
+    continue
+  fi
+
+  # Only plaintext exists. Encrypt if it's older than the cutoff; leave
+  # active sessions alone.
+  if [[ ! "$file" -ot "$CUTOFF_REF" ]]; then
     skipped=$((skipped + 1))
     continue
   fi
@@ -76,25 +143,15 @@ while IFS= read -r -d '' file; do
     continue
   fi
 
-  if age -r "$RECIPIENT" -o "$out" "$file" 2>>"$LOG_FILE"; then
-    if [[ -s "$out" ]]; then
-      rm -f -- "$file"
-      log "ok: $file -> $out"
-      encrypted=$((encrypted + 1))
-    else
-      rm -f -- "$out"
-      log "empty_output_aborted: $file"
-      failed=$((failed + 1))
-    fi
+  if encrypt_to "$file" "$out" "ok" "encrypt_failed"; then
+    encrypted=$((encrypted + 1))
   else
-    rm -f -- "$out"
-    log "encrypt_failed: $file"
     failed=$((failed + 1))
   fi
 done < <(
   find "$PROJECTS_DIR" \
     \( -name '*.jsonl' -o \( -path '*/tool-results/*' -name '*.txt' \) \) \
-    -type f -mtime +"$CUTOFF_DAYS" -print0
+    -type f -print0
 )
 
-log "done considered=$considered encrypted=$encrypted skipped=$skipped failed=$failed"
+log "done considered=$considered encrypted=$encrypted reconciled=$reconciled skipped=$skipped failed=$failed"

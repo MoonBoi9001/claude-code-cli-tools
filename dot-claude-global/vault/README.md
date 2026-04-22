@@ -10,7 +10,8 @@ is deleted.
 - `bin/encrypt-old-sessions` — non-interactive. Runs on `SessionStart`. Uses
   the public recipient key only, no network needed.
 - `bin/decrypt-session` — on-demand. Takes one or more session ids or paths
-  and writes the plaintext alongside the `.age` file.
+  and writes the plaintext alongside the `.age` file. Pass `--stdout` to
+  pipe the decrypted content to stdout instead of writing to disk.
 
 Personal config (recipient key, private vault repo slug, log path) lives
 outside this repo in `~/.claude/vault-local/` and is not version-controlled
@@ -95,6 +96,20 @@ Decrypt a session on demand:
 ~/.claude/vault/bin/decrypt-session /path/to/file.jsonl.age
 ```
 
+For search or inspection workflows where you don't want plaintext to
+land on disk, use `--stdout`:
+
+```bash
+~/.claude/vault/bin/decrypt-session --stdout <session-id> | grep 'foo'
+
+# bulk grep across the encrypted archive:
+for f in ~/.claude/projects/**/*.jsonl.age; do
+  if ~/.claude/vault/bin/decrypt-session --stdout "$f" | grep -q 'foo'; then
+    echo "$f"
+  fi
+done
+```
+
 ## Behaviour notes
 
 - If `~/.claude/vault-local/config.sh` is missing, `encrypt-old-sessions`
@@ -105,3 +120,11 @@ Decrypt a session on demand:
 - Renamed `.age` files aren't recognised by Claude Code's built-in
   `cleanupPeriodDays` cleanup, so the encrypted archive is retained
   independently of that setting.
+- When `decrypt-session` writes plaintext alongside a `.age`, it sets the
+  plaintext mtime to match the `.age`. On the next `SessionStart`,
+  `encrypt-old-sessions` reconciles any both-exist pair: plaintext
+  strictly newer than the `.age` gets re-encrypted (capturing resumed
+  sessions or manual edits) and replaces the `.age`; matching or older
+  mtimes are treated as stale decrypt artifacts and the plaintext is
+  dropped. This runs on every `SessionStart`, regardless of cutoff age,
+  so the archive self-heals from forgotten decrypts.

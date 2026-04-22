@@ -6,10 +6,31 @@
 #   decrypt-session <session-id>
 #   decrypt-session /path/to/file.jsonl.age
 #   decrypt-session <session-id-or-path> [<more>...]
+#   decrypt-session --stdout <session-id-or-path> [<more>...]
+#
+# With --stdout, plaintext is piped to stdout and never written to disk —
+# use this for search/inspection workflows that shouldn't leave decrypted
+# copies alongside the .age files (pipe directly into grep/jq/etc).
+#
+# Without --stdout, plaintext is written alongside the .age file and its
+# mtime is set to match the .age. On the next SessionStart the encrypt
+# hook treats the matching-mtime plaintext as a stale fresh-decrypt and
+# removes it; if you edit the plaintext (bumping mtime past the .age),
+# it gets re-encrypted instead.
 #
 # Identity retrieval requires `gh auth status` to be healthy.
 
 set -euo pipefail
+
+STDOUT_MODE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --stdout) STDOUT_MODE=1; shift ;;
+    --) shift; break ;;
+    --*) echo "Unknown flag: $1" >&2; exit 1 ;;
+    *) break ;;
+  esac
+done
 
 VAULT_LOCAL="${CLAUDE_VAULT_LOCAL_DIR:-$HOME/.claude/vault-local}"
 CONFIG="$VAULT_LOCAL/config.sh"
@@ -27,7 +48,7 @@ if [[ -z "$VAULT_REPO" ]]; then
 fi
 
 if [[ $# -eq 0 ]]; then
-  echo "Usage: $(basename "$0") <session-id-or-path> [<more>...]" >&2
+  echo "Usage: $(basename "$0") [--stdout] <session-id-or-path> [<more>...]" >&2
   exit 1
 fi
 
@@ -64,6 +85,14 @@ for arg in "$@"; do
     continue
   fi
 
+  if [[ "$STDOUT_MODE" == "1" ]]; then
+    if ! age -d -i "$identity_tmp" "$target"; then
+      echo "Decrypt failed: $target" >&2
+      status=1
+    fi
+    continue
+  fi
+
   out="${target%.age}"
   if [[ -e "$out" ]]; then
     echo "Plaintext already exists, refusing to overwrite: $out" >&2
@@ -72,6 +101,10 @@ for arg in "$@"; do
   fi
 
   if age -d -i "$identity_tmp" -o "$out" "$target"; then
+    # Align plaintext mtime with the .age so encrypt-old-sessions can
+    # tell "fresh decrypt" (mtimes equal -> drop) from "edited after
+    # decrypt" (plaintext newer -> re-encrypt).
+    touch -r "$target" "$out" 2>/dev/null || true
     echo "Decrypted: $out"
   else
     echo "Decrypt failed: $target" >&2
