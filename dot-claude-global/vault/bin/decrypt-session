@@ -3,29 +3,27 @@
 # Fetches the age identity from the private GH vault repo on demand.
 #
 # Usage:
-#   decrypt-session <session-id>
-#   decrypt-session /path/to/file.jsonl.age
-#   decrypt-session <session-id-or-path> [<more>...]
-#   decrypt-session --stdout <session-id-or-path> [<more>...]
+#   decrypt-session <session-id-or-path> [<more>...]            # -> stdout
+#   decrypt-session --write <session-id-or-path> [<more>...]    # -> alongside
 #
-# With --stdout, plaintext is piped to stdout and never written to disk —
-# use this for search/inspection workflows that shouldn't leave decrypted
-# copies alongside the .age files (pipe directly into grep/jq/etc).
+# By default, plaintext is piped to stdout and never written to disk —
+# pipe directly into grep/jq/less for search and inspection. This is the
+# safe default because it leaves no decrypted copies behind.
 #
-# Without --stdout, plaintext is written alongside the .age file and its
-# mtime is set to match the .age. On the next SessionStart the encrypt
-# hook treats the matching-mtime plaintext as a stale fresh-decrypt and
-# removes it; if you edit the plaintext (bumping mtime past the .age),
-# it gets re-encrypted instead.
+# Pass --write to restore plaintext alongside the .age file (for example,
+# to un-archive a session for `claude --resume`). The plaintext mtime is
+# set to match the .age so the encrypt hook can tell "fresh decrypt"
+# (mtimes equal -> drop) from "edited after decrypt" (plaintext newer ->
+# re-encrypt) on the next SessionStart.
 #
 # Identity retrieval requires `gh auth status` to be healthy.
 
 set -euo pipefail
 
-STDOUT_MODE=0
+WRITE_MODE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --stdout) STDOUT_MODE=1; shift ;;
+    --write) WRITE_MODE=1; shift ;;
     --) shift; break ;;
     --*) echo "Unknown flag: $1" >&2; exit 1 ;;
     *) break ;;
@@ -48,7 +46,7 @@ if [[ -z "$VAULT_REPO" ]]; then
 fi
 
 if [[ $# -eq 0 ]]; then
-  echo "Usage: $(basename "$0") [--stdout] <session-id-or-path> [<more>...]" >&2
+  echo "Usage: $(basename "$0") [--write] <session-id-or-path> [<more>...]" >&2
   exit 1
 fi
 
@@ -85,7 +83,7 @@ for arg in "$@"; do
     continue
   fi
 
-  if [[ "$STDOUT_MODE" == "1" ]]; then
+  if [[ "$WRITE_MODE" == "0" ]]; then
     if ! age -d -i "$identity_tmp" "$target"; then
       echo "Decrypt failed: $target" >&2
       status=1

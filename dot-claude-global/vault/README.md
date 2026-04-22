@@ -10,8 +10,9 @@ is deleted.
 - `bin/encrypt-old-sessions` — non-interactive. Runs on `SessionStart`. Uses
   the public recipient key only, no network needed.
 - `bin/decrypt-session` — on-demand. Takes one or more session ids or paths
-  and writes the plaintext alongside the `.age` file. Pass `--stdout` to
-  pipe the decrypted content to stdout instead of writing to disk.
+  and pipes the plaintext to stdout by default (never writes to disk). Pass
+  `--write` to restore plaintext alongside the `.age` file instead (for
+  un-archiving a session for `claude --resume`).
 
 Personal config (recipient key, private vault repo slug, log path) lives
 outside this repo in `~/.claude/vault-local/` and is not version-controlled
@@ -88,26 +89,26 @@ You need `age` (`brew install age`) and an authenticated `gh` CLI.
 
 After setup, encryption runs on every Claude Code session start via the hook.
 
-Decrypt a session on demand:
+Decrypt a session on demand (plaintext is piped to stdout — nothing lands
+on disk):
 
 ```bash
-~/.claude/vault/bin/decrypt-session <session-id>
-# or
-~/.claude/vault/bin/decrypt-session /path/to/file.jsonl.age
-```
-
-For search or inspection workflows where you don't want plaintext to
-land on disk, use `--stdout`:
-
-```bash
-~/.claude/vault/bin/decrypt-session --stdout <session-id> | grep 'foo'
+~/.claude/vault/bin/decrypt-session <session-id> | less
+~/.claude/vault/bin/decrypt-session /path/to/file.jsonl.age | grep 'foo'
 
 # bulk grep across the encrypted archive:
 for f in ~/.claude/projects/**/*.jsonl.age; do
-  if ~/.claude/vault/bin/decrypt-session --stdout "$f" | grep -q 'foo'; then
+  if ~/.claude/vault/bin/decrypt-session "$f" | grep -q 'foo'; then
     echo "$f"
   fi
 done
+```
+
+To restore plaintext alongside the `.age` (for example, to un-archive a
+session so `claude --resume` can read it), pass `--write`:
+
+```bash
+~/.claude/vault/bin/decrypt-session --write <session-id>
 ```
 
 ## Behaviour notes
@@ -120,8 +121,8 @@ done
 - Renamed `.age` files aren't recognised by Claude Code's built-in
   `cleanupPeriodDays` cleanup, so the encrypted archive is retained
   independently of that setting.
-- When `decrypt-session` writes plaintext alongside a `.age`, it sets the
-  plaintext mtime to match the `.age`. On the next `SessionStart`,
+- When `decrypt-session --write` restores plaintext alongside a `.age`, it
+  sets the plaintext mtime to match the `.age`. On the next `SessionStart`,
   `encrypt-old-sessions` reconciles any both-exist pair: plaintext
   strictly newer than the `.age` gets re-encrypted (capturing resumed
   sessions or manual edits) and replaces the `.age`; matching or older
