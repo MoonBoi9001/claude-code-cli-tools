@@ -59,6 +59,12 @@ if ! gh api "repos/${VAULT_REPO}/contents/identity.txt" --jq '.content' \
   exit 2
 fi
 
+# When running interactively (stdout is a terminal) in the default stdout
+# mode, hint once that --write is an option. Pipes and redirects stay quiet.
+if [[ "$WRITE_MODE" == "0" && -t 1 ]]; then
+  echo "decrypt-session: piping plaintext to stdout; pass --write to save alongside the .age instead." >&2
+fi
+
 resolve_target() {
   local arg="$1"
   if [[ -f "$arg" ]]; then
