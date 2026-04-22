@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# Decrypt one or more .age Claude Code session artifacts.
+# Fetches the age identity from the private GH vault repo on demand.
+#
+# Usage:
+#   decrypt-session <session-id-or-path> [<more>...]            # -> stdout
+#   decrypt-session --write <session-id-or-path> [<more>...]    # -> alongside
+#
+# By default, plaintext is piped to stdout and never written to disk —
+# pipe directly into grep/jq/less for search and inspection. This is the
+# safe default because it leaves no decrypted copies behind.
+#
+# Pass --write to restore plaintext alongside the .age file (for example,
+# to un-archive a session for `claude --resume`). The plaintext mtime is
+# set to match the .age so the encrypt hook can tell "fresh decrypt"
+# (mtimes equal -> drop) from "edited after decrypt" (plaintext newer ->
+# re-encrypt) on the next SessionStart.
+#
+# Identity retrieval requires `gh auth status` to be healthy.
+
+set -euo pipefail
+
+WRITE_MODE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --write) WRITE_MODE=1; shift ;;
+    --) shift; break ;;
+    --*) echo "Unknown flag: $1" >&2; exit 1 ;;
+    *) break ;;
+  esac
+done
+
+VAULT_LOCAL="${CLAUDE_VAULT_LOCAL_DIR:-$HOME/.claude/vault-local}"
+CONFIG="$VAULT_LOCAL/config.sh"
+if [[ -r "$CONFIG" ]]; then
+  # shellcheck disable=SC1090
+  . "$CONFIG"
+fi
+
+VAULT_REPO="${CLAUDE_VAULT_REPO:-}"
+PROJECTS_DIR="${CLAUDE_VAULT_PROJECTS_DIR:-$HOME/.claude/projects}"
+
+if [[ -z "$VAULT_REPO" ]]; then
+  echo "claude-vault: CLAUDE_VAULT_REPO is not set. Configure it in $CONFIG (see vault/README.md)." >&2
+  exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $(basename "$0") [--write] <session-id-or-path> [<more>...]" >&2
+  exit 1
+fi
+
+identity_tmp=$(mktemp -t claude-vault-identity.XXXXXX)
+trap 'rm -f "$identity_tmp"' EXIT
+
+if ! gh api "repos/${VAULT_REPO}/contents/identity.txt" --jq '.content' \
+     | openssl base64 -A -d > "$identity_tmp"; then
+  echo "Failed to fetch identity from ${VAULT_REPO}. Check gh auth and repo access." >&2
+  exit 2
+fi
+
+# When running interactively (stdout is a terminal) in the default stdout
+# mode, hint once that --write is an option. Pipes and redirects stay quiet.
+if [[ "$WRITE_MODE" == "0" && -t 1 ]]; then
+  echo "decrypt-session: piping plaintext to stdout; pass --write to save alongside the .age instead." >&2
+fi
+
+resolve_target() {
+  local arg="$1"
+  if [[ -f "$arg" ]]; then
+    printf '%s\n' "$arg"
+    return 0
+  fi
+  # Search by session id
+  local match
+  match=$(find "$PROJECTS_DIR" \( -name "${arg}.jsonl.age" -o -name "${arg}.txt.age" \) -type f -print -quit)
+  if [[ -n "$match" ]]; then
+    printf '%s\n' "$match"
+    return 0
+  fi
+  return 1
+}
+
+status=0
+for arg in "$@"; do
+  if ! target=$(resolve_target "$arg"); then
+    echo "Not found: $arg" >&2
+    status=1
+    continue
+  fi
+
+  if [[ "$WRITE_MODE" == "0" ]]; then
+    if ! age -d -i "$identity_tmp" "$target"; then
+      echo "Decrypt failed: $target" >&2
+      status=1
+    fi
+    continue
+  fi
+
+  out="${target%.age}"
+  if [[ -e "$out" ]]; then
+    echo "Plaintext already exists, refusing to overwrite: $out" >&2
+    status=1
+    continue
+  fi
+
+  if age -d -i "$identity_tmp" -o "$out" "$target"; then
+    # Align plaintext mtime with the .age so encrypt-old-sessions can
+    # tell "fresh decrypt" (mtimes equal -> drop) from "edited after
+    # decrypt" (plaintext newer -> re-encrypt).
+    touch -r "$target" "$out" 2>/dev/null || true
+    echo "Decrypted: $out"
+  else
+    echo "Decrypt failed: $target" >&2
+    status=1
+  fi
+done
+
+exit "$status"

@@ -35,14 +35,16 @@ The argument is a PR number (e.g., `1172`) or a GitHub PR URL. If a URL, extract
 ### 1. Fetch PR metadata and diff
 
 ```bash
-gh pr view <number> --json title,body,baseRefName,headRefName,additions,deletions,files
+gh pr view <number> --json title,body,baseRefName,headRefName,additions,deletions,files,author
 gh pr diff <number> > /tmp/pr-<number>.diff
 gh pr diff <number> --name-only
 ```
 
 Report to the user: PR title, base/head branches, size (additions/deletions), and file count. If the PR is very large (>5000 additions), warn the user it may take a while.
 
-Check if this PR is part of a stack (base branch is not `main`/`master`/`develop`). If so, note this — some patterns in the code may come from the base branch rather than this PR. The agents should focus on what this PR changes, not what the base branch already had.
+Check if this PR is part of a stack (base branch is not `main`/`master`/`develop`). If so:
+- Note this for the agents — some patterns in the code may come from the base branch rather than this PR. The agents should focus on what this PR changes, not what the base branch already had.
+- **Map the PR chain.** Use `gh pr list --head <headRefName>` and `gh pr list --base <headRefName>` to find downstream PRs that build on this one. For each PR number in the chain, fetch its head via `git fetch origin refs/pull/<n>/head:pr/<n>` — this works uniformly whether the PR head lives in the base repo or in a fork, because GitHub exposes `refs/pull/<n>/head` on the base repo for every PR. Record the chain (e.g., "#1172 -> #1174 -> #1175 -> #1181") for reference. This is critical because stacked PRs often introduce functions in one PR and wire them up in the next — a function with zero callers in the current PR may have callers in the next PR in the chain.
 
 Infer domain context from the PR title, body, and file paths. Before launching agents, add a one-line domain summary to the shared context (e.g., "This is a blockchain indexing agent that manages on-chain allocations and payment collection" or "This is a REST API for user management"). This helps agents assess severity more accurately — knowing that "collect" means "call a smart contract" changes how you evaluate error handling.
 
@@ -70,6 +72,9 @@ Severity rules — these determine whether your review is useful or noise:
 BEFORE reporting any finding:
 1. Check callers. Search for who calls the function/method. If zero callers,
    it's dead code — report it as "dead code" under Minor, not as a bug.
+   IMPORTANT: For stacked PRs, zero callers in the current checkout does NOT
+   mean dead code. The caller may be in a downstream PR. Flag it as "no
+   callers in this PR — may be wired up downstream" rather than "dead code."
 2. Check runtime reachability. Trace the code path from an entry point (API
    handler, timer, reconciliation loop) to the flagged code. If you can't
    trace a path, the code may not execute.
@@ -145,11 +150,13 @@ After all 6 agents complete, merge their findings into a single list. Deduplicat
 
 Go through every finding ranked Significant or above and personally verify it:
 
-1. **Read the actual code** at the file and line cited.
-2. **Search for callers** — `grep` for the function name. If zero callers, downgrade to Minor (dead code).
-3. **Trace the entry point** — can you get from a timer, API handler, or user action to this code? If not, downgrade.
-4. **Check external guards** — for on-chain interactions, does the contract prevent the bad outcome? If yes, downgrade.
-5. **Ask "so what?"** — if this bug fires in production, what actually happens? If the answer is "a log line" or "wasted gas" or "a retry", it's not Significant.
+1. **Verify attribution** — if a finding claims something is "new," "introduced by," or "added in" this PR, check the diff. If the code predates this PR, correct the attribution. Observations about unchanged code are valid findings but must be labeled accurately — don't claim the PR introduced something it didn't.
+2. **Read the actual code** at the file and line cited. IMPORTANT: Use `gh pr diff <n>` when you only need the change, or fetch the PR's head ref via `git fetch origin refs/pull/<n>/head:pr/<n>` and then `git show pr/<n>:path/to/file` when you need surrounding context. This works for same-repo and forked PRs. Never use bare branch names — local branches may have extra commits from the user or other contributors that aren't part of the PR. `origin/<branch>` refs only work when the PR head lives in the base repo; for forks, the branch isn't on `origin` and you'll get a confusing error or silently read the wrong tree.
+3. **Search for callers** — `grep` for the function name. If zero callers in the current checkout, and this is a stacked PR, **fetch and search the downstream PR refs** identified in Step 1 (after `git fetch origin refs/pull/<n>/head:pr/<n>`, use `git show pr/<n>:<file> | grep <function>`). A function introduced in PR N with zero local callers but called in PR N+1 is not dead code — it's staged for the next PR. Downgrade to Minor ("dead code") only after confirming zero callers across the entire chain.
+4. **Trace the entry point** — can you get from a timer, API handler, or user action to this code? If not, downgrade.
+5. **Trace the consumer** — for "wrong data returned" findings (missing filter, wrong query, stale cache), don't stop at "this could return the wrong record." Check what the caller does with the result. Does the caller branch on it? Is the result used in a path that's actually reachable given normal control flow? A query that could match the wrong row but whose result is never used in the relevant code path is Minor at most.
+6. **Check external guards** — for on-chain interactions, does the contract prevent the bad outcome? If yes, downgrade.
+7. **Ask "so what?"** — if this bug fires in production, what actually happens? If the answer is "a log line" or "wasted gas" or "a retry", it's not Significant.
 
 Be aggressive about downgrading. A finding that "sounds scary" but can't cause harm in practice is noise. Presenting noise erodes the user's trust in the review.
 
@@ -190,6 +197,7 @@ Structure:
 # PR #<number> Review: <title>
 
 **PR**: <url>
+**Author**: <author>
 **Branch**: <head> -> <base>
 **Size**: <additions> additions, <deletions> deletions, <file_count> files
 **Reviewed**: <date>
@@ -199,11 +207,17 @@ Structure:
 
 ## Significant
 ### <N>. <Title>
-<Description with entry point, trigger, and consequence.>
+**In short**: <1-2 sentence non-technical summary of what's wrong and what to do about it. No function names or code — write it so someone skimming the review gets the point immediately.>
+<Description with entry point, trigger, and consequence. When a finding involves multiple steps or behavior over time, include a short concrete example showing what happens rather than describing the problem abstractly. Use tables to show state (e.g., DB rows before/after, cache entries, queue items) — visual reporting is easier to follow than prose for stateful bugs.>
+**Fix**: <Concrete recommendation — what to change, where, and why. If there are multiple options, list them with trade-offs.>
 **Status**: [ ] Reviewed
 
 ## Moderate
-...
+### <N>. <Title>
+**In short**: <1-2 sentence non-technical summary.>
+<Description.>
+**Fix**: <Concrete recommendation.>
+**Status**: [ ] Reviewed
 
 ## Minor
 ...

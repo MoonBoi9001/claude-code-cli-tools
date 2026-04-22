@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# Encrypt Claude Code transcript files older than $CUTOFF_DAYS in place.
+# Non-interactive: uses the age public recipient configured in vault-local.
+# Safe to run from SessionStart (idempotent, async-friendly).
+#
+# Setup instructions: see the sibling README.md.
+
+set -euo pipefail
+
+VAULT_LOCAL="${CLAUDE_VAULT_LOCAL_DIR:-$HOME/.claude/vault-local}"
+CONFIG="$VAULT_LOCAL/config.sh"
+
+if [[ ! -r "$CONFIG" ]]; then
+  # No local config — user hasn't set up their own keypair yet.
+  # Exit 0 so SessionStart doesn't fail the session; hint to stderr.
+  echo "claude-vault: no local config at $CONFIG — encryption skipped. See vault/README.md for setup." >&2
+  exit 0
+fi
+
+# shellcheck disable=SC1090
+. "$CONFIG"
+
+CUTOFF_DAYS="${CLAUDE_VAULT_CUTOFF_DAYS:-21}"
+PROJECTS_DIR="${CLAUDE_VAULT_PROJECTS_DIR:-$HOME/.claude/projects}"
+RECIPIENT_FILE="${CLAUDE_VAULT_RECIPIENT:-$VAULT_LOCAL/recipient.txt}"
+LOG_FILE="${CLAUDE_VAULT_LOG:-$VAULT_LOCAL/encrypt.log}"
+DRY_RUN="${CLAUDE_VAULT_DRY_RUN:-0}"
+
+if [[ ! -r "$RECIPIENT_FILE" ]]; then
+  echo "claude-vault: recipient file missing or unreadable: $RECIPIENT_FILE" >&2
+  exit 1
+fi
+RECIPIENT=$(< "$RECIPIENT_FILE")
+if [[ -z "$RECIPIENT" ]]; then
+  echo "Recipient file is empty: $RECIPIENT_FILE" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$LOG_FILE")"
+
+log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG_FILE"; }
+
+log "start cutoff=${CUTOFF_DAYS}d dry_run=${DRY_RUN}"
+
+# Serialize concurrent runs (two Claude Code sessions starting in parallel can
+# otherwise race on the same file: both see plaintext exists + .age doesn't,
+# both spawn age -o, age truncates on open so the second writer corrupts the
+# first, then both pass the -s non-empty check and rm the plaintext). mkdir is
+# atomic on POSIX, so the first process that creates $LOCK_DIR wins; others
+# exit cleanly. If a previous run crashed mid-sweep, the lock dir persists —
+# delete $LOCK_DIR manually to clear.
+LOCK_DIR="$VAULT_LOCAL/encrypt.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  log "another run is active (lock at $LOCK_DIR) — skipping"
+  exit 0
+fi
+
+# Reference file whose mtime is exactly CUTOFF_DAYS ago — lets the main loop
+# test "file older than cutoff" with bash's built-in -ot operator, avoiding
+# a find fork per candidate.
+CUTOFF_REF=$(mktemp -t claude-vault-cutoff.XXXXXX)
+if date -u -v-1d +%Y >/dev/null 2>&1; then
+  cutoff_stamp=$(date -u -v-"${CUTOFF_DAYS}"d +%Y%m%d%H%M.%S)
+else
+  cutoff_stamp=$(date -u -d "${CUTOFF_DAYS} days ago" +%Y%m%d%H%M.%S)
+fi
+touch -t "$cutoff_stamp" "$CUTOFF_REF"
+
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true; rm -f -- "${CUTOFF_REF:-}"' EXIT
+
+# Encrypt src -> dst via tmp + atomic rename. Removes src only after the .age
+# is safely in place; on any failure, the existing dst (if any) is preserved
+# and the tmp is cleaned up. Logs under $ok_label on success, $fail_label on
+# encrypt failure, and $fail_label_mv_failed on the rare mv failure path.
+encrypt_to() {
+  local src="$1" dst="$2" ok_label="$3" fail_label="$4"
+  local tmp="${dst}.tmp.$$"
+  if age -r "$RECIPIENT" -o "$tmp" "$src" 2>>"$LOG_FILE" && [[ -s "$tmp" ]]; then
+    if mv -f -- "$tmp" "$dst"; then
+      rm -f -- "$src"
+      log "${ok_label}: $src -> $dst"
+      return 0
+    fi
+    rm -f -- "$tmp"
+    log "${fail_label}_mv_failed: $src"
+    return 1
+  fi
+  rm -f -- "$tmp"
+  log "${fail_label}: $src"
+  return 1
+}
+
+encrypted=0; skipped=0; failed=0; considered=0; reconciled=0
+
+# Process substitution keeps the while-loop in the parent shell so counter
+# updates persist (bash 3.2 on macOS has no mapfile).
+#
+# The find command picks up all candidate plaintext files regardless of age;
+# the cutoff check is applied inline so we can still reconcile recent
+# both-exist cases left behind by decrypt-session.
+while IFS= read -r -d '' file; do
+  considered=$((considered + 1))
+  out="${file}.age"
+
+  if [[ -e "$out" ]]; then
+    # Plaintext and .age both exist. Use mtime to decide authority:
+    #   plaintext strictly newer  -> treat as edited content, re-encrypt
+    #   otherwise                 -> treat as stale decrypt artifact, drop it
+    if [[ "$file" -nt "$out" ]]; then
+      if [[ "$DRY_RUN" == "1" ]]; then
+        log "dry_run_would_reencrypt: $file"
+        reconciled=$((reconciled + 1))
+        continue
+      fi
+      if encrypt_to "$file" "$out" "reencrypted" "reencrypt_failed"; then
+        reconciled=$((reconciled + 1))
+      else
+        failed=$((failed + 1))
+      fi
+    else
+      if [[ "$DRY_RUN" == "1" ]]; then
+        log "dry_run_would_drop_stale_plaintext: $file"
+        reconciled=$((reconciled + 1))
+        continue
+      fi
+      rm -f -- "$file"
+      log "dropped_stale_plaintext: $file"
+      reconciled=$((reconciled + 1))
+    fi
+    continue
+  fi
+
+  # Only plaintext exists. Encrypt if it's older than the cutoff; leave
+  # active sessions alone.
+  if [[ ! "$file" -ot "$CUTOFF_REF" ]]; then
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    log "dry_run_would_encrypt: $file"
+    encrypted=$((encrypted + 1))
+    continue
+  fi
+
+  if encrypt_to "$file" "$out" "ok" "encrypt_failed"; then
+    encrypted=$((encrypted + 1))
+  else
+    failed=$((failed + 1))
+  fi
+done < <(
+  find "$PROJECTS_DIR" \
+    \( -name '*.jsonl' -o \( -path '*/tool-results/*' -name '*.txt' \) \) \
+    -type f -print0
+)
+
+log "done considered=$considered encrypted=$encrypted reconciled=$reconciled skipped=$skipped failed=$failed"
