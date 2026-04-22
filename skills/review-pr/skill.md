@@ -203,6 +203,8 @@ Structure:
 **Size**: <additions> additions, <deletions> deletions, <file_count> files
 **Reviewed**: <date>
 
+Status legend: `[ ] Reviewed` (default), `[x] Commented` (user posted the PR comment), `[x] No action` (intentionally skipped — see PR comment field for the reason).
+
 ## Critical
 (Only if there are genuinely critical findings after the severity challenge.)
 
@@ -210,21 +212,31 @@ Structure:
 ### <N>. <Title>
 **In short**: <1-2 sentence non-technical summary of what's wrong and what to do about it. No function names or code — write it so someone skimming the review gets the point immediately.>
 <Description with entry point, trigger, and consequence. When a finding involves multiple steps or behavior over time, include a short concrete example showing what happens rather than describing the problem abstractly. Use tables to show state (e.g., DB rows before/after, cache entries, queue items) — visual reporting is easier to follow than prose for stateful bugs.>
+
 **Fix**: <Concrete recommendation — what to change, where, and why. If there are multiple options, list them with trade-offs.>
+
+**PR comment** (<anchor — file path and a line number or nearby identifier, OR "top-level review comment, not inline">):
+> <one-sentence comment the user can paste onto the PR — see Step 6 for the rules>
+
 **Status**: [ ] Reviewed
 
 ## Moderate
 ### <N>. <Title>
 **In short**: <1-2 sentence non-technical summary.>
 <Description.>
+
 **Fix**: <Concrete recommendation.>
+
+**PR comment** (<anchor>):
+> <one-sentence comment>
+
 **Status**: [ ] Reviewed
 
 ## Minor
 ...
 
 ## Test Gaps
-<Bullet list of untested paths identified by the test coverage agent.>
+<Bullet list of untested paths identified by the test coverage agent. If any of these warrant a PR comment, add a "PR comment" line beneath the bullet using the same format as the findings above.>
 
 ## Positives
 <Bullet list of things done well.>
@@ -232,7 +244,26 @@ Structure:
 
 Omit empty severity sections. Number findings sequentially across all sections.
 
-### 6. Present to the user
+### 6. Draft a PR comment for every finding
+
+The report must be actionable, not just informational. The md is the single source of truth for the full review-to-comment-to-land workflow — the user should be able to paste from it without re-thinking phrasing.
+
+For each finding, add a `**PR comment**` field with a one-sentence comment.
+
+**Drafting rules:**
+- One sentence. First-person suggestion style: `suggestion: X`, `nit: X`, or a direct question like `this does Y — can we Z?`. Avoid imperative commands; frame as something the author can redirect.
+- Prefix with the anchor where the user should post the comment, e.g. `(on \`path/to/file.ext\` near the \`functionName\` call)` or `(on \`path/to/file.ext\` line N)`.
+- For findings that span multiple files or have no natural inline location (release-notes asks, PR-description changes, cross-cutting concerns), mark as `(top-level review comment, not inline)`.
+
+**When to skip — never skip silently, always state the reason:**
+- Addressed in a downstream PR in the stack → `none — fixed in #NNNN`
+- Trivial style nit not worth a separate comment (e.g., whitespace, single typo) → `none — trivial`
+- Edge case too narrow to flag (e.g., behavior change that only fires on malformed hand-edited input) → `none — too narrow`
+- Informational positive or context-only note → `none — informational`
+
+Every finding in every severity section gets either a drafted comment or a one-line skip reason. If you find yourself wanting to skip more than one or two findings per review, reconsider whether those findings belong in the report at all — a finding not worth commenting on is often a finding not worth recording.
+
+### 7. Present to the user
 
 Show a short summary: how many findings at each severity, the most notable ones, and the path to the full report. Do not dump the entire report into the conversation — the user can read the file.
 
