@@ -30,11 +30,13 @@
 
 ### Motivation section
 
-The motivation orients the reader before they look at any code. Write it as if explaining to yourself on a day you haven't touched this area — clear enough to anchor what the PR does and why, without needing to read the diff first.
+The motivation orients the reader before they look at any code. Write it for two audiences at once: yourself on a day you haven't touched this area, and a colleague landing on the PR cold — no prior context on the change, the surrounding code, or sibling PRs in a stacked series. Both should understand the point without reading the diff, related PRs, or external docs.
 
 **Structure**: Open with what the system does today (the normal behaviour or current state), then introduce what's wrong or missing, then connect that to the impact. The reader should understand the "before" picture before seeing the "after."
 
-**Tone**: Use the natural domain language of the project (contracts, escrow, receipts, signers) but avoid implementation internals (actor mailboxes, HashMap semantics, trait impls). If a term wouldn't come up in a conversation about what the system does — only in how the code works — it belongs in the summary or code comments, not the motivation. Don't overstate the impact or make unverified claims — if something "may" cause an issue, say "may."
+**Stakes**: Make the cost of the status quo explicit. Who is hurt by the current state — users, operators, on-call, future maintainers? What breaks, gets missed, or gets harder if this PR doesn't land? A motivation that ends at "X causes Y" without answering "and so what?" leaves the reader unable to judge how much the PR matters. Stakes should be concrete (named systems, named consequences), not vague gestures like "this is bad for users."
+
+**Tone**: Write at a level a non-engineer collaborator (PM, designer, a reviewer of your work who isn't deep in this codebase) could follow. Use the natural domain language of the project (contracts, escrow, receipts, signers) but avoid implementation internals (actor mailboxes, HashMap semantics, trait impls). If a term wouldn't come up in a conversation about what the system does — only in how the code works — it belongs in the summary or code comments, not the motivation. When a domain term is unavoidable but likely opaque to a non-technical reader, gloss it in one short clause the first time it appears. Don't overstate the impact or make unverified claims — if something "may" cause an issue, say "may."
 
 **Specificity**: Name the actual components and services involved. "The network subgraph" not "a subgraph." Vague references force the reader to guess.
 
