@@ -6,3 +6,5 @@ skills/*/.git/
 /skills/review-pr/evals
 /skills/review-pr/review-pr-workspace
 /dot-claude-global/vault/encrypt.log
+/skills/review-todo-workspace
+/skills/review-todo/evals
