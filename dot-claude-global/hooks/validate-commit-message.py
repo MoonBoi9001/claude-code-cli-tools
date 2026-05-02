@@ -4,7 +4,7 @@ PreToolUse hook to validate git commit messages against project standards.
 
 Enforces:
   - Title under 72 characters
-  - Title in conventional-commits format (`type(scope)?: subject`)
+  - Title in conventional-commits format (`type(scope): subject`, scope mandatory and exactly one lowercase word)
   - Body 1-4 non-empty non-trailer lines max
   - Body lines wrap at 72 characters
   - Trailers (e.g. `Co-Authored-By:`) at the end after a blank line don't count
@@ -50,7 +50,7 @@ CONVENTIONAL_TYPES = (
     "revert",
 )
 CONVENTIONAL_TITLE_RE = re.compile(
-    r"^(" + "|".join(CONVENTIONAL_TYPES) + r")(\([^)]+\))?!?: .+$"
+    r"^(" + "|".join(CONVENTIONAL_TYPES) + r")\([a-z0-9]+\)!?: .+$"
 )
 
 # A git trailer is a `Token: value` pair where Token uses Title-Case-With-Hyphens.
@@ -181,7 +181,11 @@ def validate(msg: str) -> list[str]:
     if not CONVENTIONAL_TITLE_RE.match(title):
         errors.append(
             "Title is not in conventional-commits format. Expected "
-            "`type(scope)?: subject` where type is one of: "
+            "`type(scope): subject`. Scope is mandatory: exactly one "
+            "lowercase word, no hyphens or slashes, specific enough to "
+            "point at the right area. `fix(skill):` is right; "
+            "`fix(add-indexers-skill):` is too many words; "
+            "`fix(indexers):` is too generic. Type must be one of: "
             + ", ".join(CONVENTIONAL_TYPES)
             + "."
         )
