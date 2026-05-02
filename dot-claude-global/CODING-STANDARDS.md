@@ -128,7 +128,9 @@ Code that swallows errors and continues is code that can be broken for weeks wit
 ### Commit Messages
 
 - Title: conventional commit format, under 72 characters
-- Body: 1-5 lines max, wrap at 125 characters. State what changed and why, not a full essay. Save detailed context for the PR body.
+- Body: 1-4 lines max, wrap at 72 characters. State what the commit *does* and *why*, not a full essay. Save detailed context for the PR body. If the change can't be explained in 4 lines, split it into multiple commits.
+- Build the body from context to action: open with the situation (what exists, what's broken or missing), then describe what the commit changes. Each sentence should set up the next, so a reader without prior context — think 3 a.m., unfamiliar repo — can follow without needing to look anything up.
+- Trailers (e.g. `Co-Authored-By:`) live below a blank line after the body and don't count against the 4-line limit
 - Never restate the title in the body
 
 ### Branch Strategy
