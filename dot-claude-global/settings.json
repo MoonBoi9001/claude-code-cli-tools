@@ -430,10 +430,11 @@
     "telegram@claude-plugins-official": true,
     "superpowers@claude-plugins-official": false
   },
+  "syntaxHighlightingDisabled": false,
   "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
-  "theme": "light-daltonized",
+  "theme": "custom:man-page",
   "verbose": true,
   "autoCompactEnabled": false,
   "teammateMode": "auto",
