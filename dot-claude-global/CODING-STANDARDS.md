@@ -125,22 +125,4 @@ Code that swallows errors and continues is code that can be broken for weeks wit
 
 ## Git Workflow
 
-### Commit Messages
-
-- Title: conventional commit format, under 72 characters
-- Body: 1-5 lines max, wrap at 125 characters. State what changed and why, not a full essay. Save detailed context for the PR body.
-- Never restate the title in the body
-
-### Branch Strategy
-
-- **Never push directly to main unless explicitly asked** - All changes must go through pull requests
-- Branch names MUST use the `mb9/` prefix: `mb9/<laymens-description>`
-  - Descriptions should be readable without codebase context — prefer slightly verbose plain English over terse developer shorthand (e.g. `add-login-authentication` not `add-auth`, `fix-dashboard-loading-crash` not `fix-null-pointer`)
-  - e.g. `mb9/add-login-authentication`, `mb9/fix-dashboard-loading-crash`
-- Use conventional commit messages with issue references
-
-### PR Sizing
-
-Prefer small, incremental PRs over large feature-complete ones. A PR that touches 5+ files or introduces a full feature in one shot is hard to review — split it into smaller logical changesets that each make sense on their own. Each PR should represent one coherent step: a new type, a migration, a single behaviour change. Reviewers can move faster through a stack of focused PRs than one sprawling diff.
-
-When working with coding agents, this matters even more — agents can produce large changesets quickly, but the review bottleneck remains human. Structure the work so each PR is reviewable in a single sitting.
+Personal git workflow rules (commit messages, branch strategy, PR titles/sizing/body) live in `~/.claude/CLAUDE.md` under `## Git Workflow`, alongside the rest of the project-style preferences. This file keeps only universal coding principles.

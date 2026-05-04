@@ -1,6 +1,6 @@
 ---
 name: review-todo
-description: Convert the most recent code review in the conversation into a grouped numbered checklist (Decisions needed / Fixes / Polish) of issues to fix. Use this skill whenever the user wants to extract, list, summarize, or triage the issues a reviewer raised — including phrasings like "list the issues from that review", "make me a todo from the review", "turn the review into a checklist", "what did the review flag", "summarize that review as a list", "give me every nit from above", or "/review-todo". Trigger especially as a natural follow-up to /review, /review-pr, /security-review, /ultrareview, or any pasted PR / inline review the user wants to act on. The output is a numbered list of every concrete issue the review raised, grouped under bold section headings, with file:line references appended in parentheses and a [needs-input: question] suffix on items the user must decide before they can be fixed.
+description: Convert the most recent code review in the conversation into a grouped numbered checklist (Decisions needed / Fixes / Polish) of issues to fix. Use this skill whenever the user wants to extract, list, summarize, or triage the issues a reviewer raised — including phrasings like "list the issues from that review", "make me a todo from the review", "turn the review into a checklist", "what did the review flag", "summarize that review as a list", "give me every nit from above", or "/review-todo". Trigger especially as a natural follow-up to /review, /review-pr, /security-review, /ultrareview, or any pasted PR / inline review the user wants to act on. The output is a numbered list of every concrete issue the review raised, grouped under bold section headings, with file:line references appended in parentheses, and decision items rendered with a `→` arrow callout below the description posing the specific question — and lettered choices below that when the reviewer named discrete alternatives.
 ---
 
 # Review Todo
@@ -27,7 +27,7 @@ Group items into three sections, in this order, each as a bold top-level heading
 
 Decisions go first so the user can answer the questions in one pass, then work straight through the rest. If a section has no items, omit the heading entirely rather than leave it empty.
 
-Number items continuously across sections (1, 2, 3, … — do not restart at each heading). Within each section, keep the review's original order. One short sentence per item, soft cap of about 20 words. No sub-bullets, no nesting, no preamble before the first heading, no closing remarks.
+Number items continuously across sections (1, 2, 3, … — do not restart at each heading). Within each section, keep the review's original order. One short sentence per item description, soft cap of about 20 words. **Fixes** and **Polish** items are description-only — no sub-bullets, no nesting. **Decisions needed** items carry an additional `→ Question?` block (and optionally lettered choices) below the description, as detailed in the next section. No preamble before the first heading, no closing remarks.
 
 **Lead each item with prose, not metadata.** The first few words are what the user's eye lands on when skimming, so they should describe the problem, not the location. Start with a natural article or verb — "The retry loop…", "Each source file…", "Add a test…" — never with a bare file path or a bare noun phrase. "Retry loop has no cap" is one word away from "The retry loop has no cap" and the second is meaningfully easier to read.
 
@@ -47,15 +47,31 @@ Number items continuously across sections (1, 2, 3, … — do not restart at ea
 
 Some review findings cannot be acted on until the user picks something. Architectural tradeoffs the reviewer flagged but did not resolve, "consider X or Y" without a recommendation, fixes that change product behavior, fixes that pick between incompatible approaches — all need input. These go in the **Decisions needed** section.
 
-Append `[needs-input: <the specific question to answer>]` at the end of the line, after the parenthetical (if any). Stating the actual question matters: a bare flag tells the user "something is up" but not what they need to think about. With the question inline, the user can scan the section, answer the questions in batch, and then work straight through the rest.
+Render the question on its own line below the item description, prefixed with `→ ` and capitalised as a sentence ending in `?`. The arrow is the visual anchor — every decision point in the document should be findable by it in one scan. Stating the actual question matters: a bare flag tells the user "something is up" but not what they need to think about.
+
+When the reviewer named two or more discrete alternatives, list them as lettered sub-options (`a.`, `b.`, `c.`…) indented two spaces under the question. Lettered, not numbered, so they cannot be confused with the parent item number. When the reviewer's framing or the surrounding context implies a clear lean, annotate one choice with `  *(recommended)*` (two spaces, then the italic-and-parens marker) as a suffix — a hint, not a verdict. Skip the marker when both options are genuinely a judgement call; leaving it off is itself a signal. When the decision is open-ended with no enumerated alternatives, the `→ Question?` line stands alone with nothing below it.
 
 ```
 **Decisions needed**
-1. The retry loop has no cap or escalation — one bad date logs WARNING hourly forever (compact.py:`_run_sweep_safely`). [needs-input: cap with backoff, escalate to ERROR for ntfy, or quarantine the bad date?]
-2. The compactor's 4 AM ET wake-up time is documented in three places (compact.py + docker-compose.yml + SKILL.md). [needs-input: pass `--target-hour` from compose for a single source of truth, or accept the duplication?]
+1. The retry loop has no cap or escalation — one bad date logs WARNING hourly forever (compact.py:`_run_sweep_safely`).
+
+   → Cap with backoff, escalate to ERROR for ntfy, or quarantine the bad date?
+     a. cap retries with exponential backoff  *(recommended)*
+     b. escalate to ERROR and route to ntfy
+     c. quarantine the bad date and continue
+
+2. The compactor's 4 AM ET wake-up time is documented in three places (compact.py + docker-compose.yml + SKILL.md).
+
+   → Pass `--target-hour` from compose for a single source of truth, or accept the duplication?
+     a. plumb `--target-hour` through compose
+     b. accept the duplication and add a comment in each place
+
+3. The new `GRT_MIN_STAKE` env var landed in the gateway config but reviewer thinks it's misplaced (config/gateway.yaml:31).
+
+   → Which service owns this setting?
 ```
 
-A finding where the reviewer already recommended a specific fix is *not* `[needs-input]`, even if it touches architecture — the decision is made, the user just has to apply it. Those go in **Fixes**.
+A finding where the reviewer already recommended a specific fix is *not* a decision item, even if it touches architecture — the decision is made, the user just has to apply it. Those go in **Fixes**.
 
 ## What not to do
 
@@ -64,7 +80,8 @@ A finding where the reviewer already recommended a specific fix is *not* `[needs
 - Do not merge two distinct issues even if they touch the same file or component.
 - Do not include praise, summary preamble, or any commentary outside the sections themselves.
 - Do not lead an item with a file path or a bare noun. Add a natural article or verb so the eye lands on the problem.
-- Do not put the `[needs-input: …]` marker at the start of the line — it goes at the end, after any parenthetical.
+- Do not inline the question on the same line as the item description — drop to a new line and lead with `→ `.
+- Do not number the lettered choices (`1.`, `2.`) — use letters (`a.`, `b.`) so they cannot be confused with the parent item number.
 
 ## Edge cases
 

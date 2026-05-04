@@ -20,15 +20,54 @@
 - Default to asking over assuming. Aggressively use AskUserQuestion early and often — before choosing an approach, before scoping work, before making judgment calls. For features or significant changes, propose various approaches with trade-offs and ask which I prefer. Do not start coding until we've agreed on direction.
 
 ## Implementation Approach
+
 - Before claiming work is complete, run the relevant tests/build/lint commands and show the output. No "should pass" or "looks correct" -- evidence before assertions.
 - When debugging, find the root cause before proposing fixes. Read the error, trace the data flow, check recent changes. Do not guess-and-check.
 
-## PR Body Guidance
+## Git Workflow
 
-- Always have a Motivation section at the top of the PR body, before the summary
-- Don't end a PR with a ## Test plan section
+### Commit Messages
 
-### Motivation section
+- Title: conventional commit format `type(scope): subject`, under 72 characters. Scope is required: exactly 1 word, no hyphens or slashes, specific enough to point at the right area, scope should not be ambiguous.
+- Body: 1-4 lines max, wrap at 72 characters. State what the commit *does* and *why*, not a full essay. Save detailed context for the PR body. If the change can't be explained in 4 lines, split it into multiple commits.
+- Build the body from context to action: open with the situation (what exists, what's broken or missing), then describe what the commit changes. Each sentence should set up the next, so a reader without prior context — think 3 a.m., unfamiliar repo — can follow without needing to look anything up.
+- Trailers (e.g. `Co-Authored-By:`) live below a blank line after the body and don't count against the 4-line limit
+- Never restate the title in the body
+
+### Branch Strategy
+
+- **Never push directly to main unless explicitly asked** - All changes must go through pull requests
+- Branch names MUST use the `mb9/` prefix: `mb9/<laymens-description>`
+  - Descriptions should be readable without codebase context — prefer slightly verbose plain English over terse developer shorthand (e.g. `add-login-authentication` not `add-auth`, `fix-dashboard-loading-crash` not `fix-null-pointer`)
+  - e.g. `mb9/add-login-authentication`, `mb9/fix-dashboard-loading-crash`
+
+### PR Titles
+
+- Keep PR titles under 64 characters. Conventional commit format (`type: subject`) still applies. Do not use `type(scope): subject` for the PR title, as we only have 64 characters to work with.
+- Readable without codebase context. A non-engineer (PM, designer, executive) skimming the PR list should be able to tell what the PR does without opening the diff. Avoid file paths, function names, internal acronyms, engineering specific lingo and library-specific jargon — describe the change in plain english terms, not the implementation details.
+
+### PR Sizing
+
+Prefer small, incremental PRs over large feature-complete ones. A PR that touches 5+ files or introduces a full feature in one shot is hard to review — split it into smaller logical changesets that each make sense on their own. Each PR should represent one coherent step: a new type, a migration, a single behaviour change. Reviewers can move faster through a stack of focused PRs than one sprawling diff.
+
+When working with coding agents, this matters even more — agents can produce large changesets quickly, but the review bottleneck remains human. Structure the work so each PR is easily reviewable in a single sitting.
+
+### PR Body
+
+- The PR body should contain only three parts. TL;DR, Motivation and Summary.
+  1. TL;DR explains the PR for someone that doesnt even have 30 seconds of time to review and approve.
+  2. Motivation follows TL;DR section at the top of the PR body, before the summary
+  3. Summary finalises the PR body.
+
+#### TL;DR
+
+The TL;DR is the one-glance answer to "what does this PR do, and is it safe to approve?" Written for a reader who has fewer than 30 seconds to look at this PR.
+
+**Length**: 3 sentences max. If it doesn't fit, the PR is probably too broad and should be split.
+
+**Tone**: same as the rest of the body. Readable by a non-engineer; no jargon, no file paths, no function names.
+
+#### Motivation section
 
 The motivation orients the reader before they look at any code. Write it for two audiences at once: yourself on a day you haven't touched this area, and a colleague landing on the PR cold — no prior context on the change, the surrounding code, or sibling PRs in a stacked series. Both should understand the point without reading the diff, related PRs, or external docs.
 
@@ -42,9 +81,11 @@ The motivation orients the reader before they look at any code. Write it for two
 
 **Cause and effect**: When the PR addresses a problem, trace the chain of consequences as a connected narrative. Each step should follow from the previous one, building toward the impact. Don't list effects in parallel — connect them.
 
-### Summary and Changes sections
+**Size**: No more than 5 sentences. No more than 2 paragraphs. If you cannot explain the motivation in less than 5 sentences across 2 paragraphs max, then the PR is too big and should be split into logical changesets.
 
-The summary is a concise list of what the PR actually does. Keep it to bullet points — the narrative belongs in the motivation, not here.
+#### Summary and Changes sections
+
+The summary is a concise list of what the PR actually does. Keep it to bullet points — the narrative belongs in the motivation, not here. Each bullet point should contain a sentence with less than 100 characters.
 
 ## Memories
 

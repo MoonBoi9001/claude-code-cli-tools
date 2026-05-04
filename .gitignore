@@ -8,3 +8,4 @@ skills/*/.git/
 /dot-claude-global/vault/encrypt.log
 /skills/review-todo-workspace
 /skills/review-todo/evals
+/skills/load-prior-session-workspace

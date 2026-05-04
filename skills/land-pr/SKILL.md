@@ -13,13 +13,7 @@ Use `<arg1>` if provided. If not, default to `--squash`. Valid values: `squash`,
 
 ## Steps
 
-1. Check for chained PRs that depend on this branch:
-   ```
-   gh pr list --base <current-branch> --state open
-   ```
-   If any open PRs target this branch, warn the user and stop. Deleting the branch would close those PRs. The user needs to retarget them first (e.g. `gh pr edit <number> --base main`).
-
-2. Check CI status on the PR:
+1. Check CI status on the PR:
    ```
    gh pr checks
    ```
@@ -30,21 +24,29 @@ Use `<arg1>` if provided. If not, default to `--squash`. Valid values: `squash`,
 
    If the repo has no CI configured, `gh pr checks` exits 0 with no output — treat that as "nothing to check" and continue.
 
-3. Identify the base branch this PR targets:
+2. Capture the head and base branches before merging:
    ```
-   gh pr view --json baseRefName --jq '.baseRefName'
+   gh pr view --json headRefName,baseRefName
    ```
 
-4. Merge the PR, delete branches, and switch to the base branch:
+3. Merge the PR — **without `--delete-branch`**:
    ```
-   gh pr merge --<strategy> --delete-branch
+   gh pr merge --<strategy>
    ```
-   `gh pr merge --delete-branch` handles: merging, deleting the remote branch, switching to the base branch, fetching, pulling, and deleting the local branch.
+   The repo has `delete_branch_on_merge` enabled at the GitHub level, so GitHub deletes the remote head branch and auto-retargets any chained PRs onto the base branch. Passing `--delete-branch` would instead **close** those chained PRs, so we deliberately omit it.
+
+4. Switch to the base branch, pull, and delete the local head branch:
+   ```
+   git checkout <base>
+   git pull
+   git branch -D <head>
+   ```
+   Use `-D` (force) — after a squash or rebase merge, the local branch tip won't match the new commit on base, so `-d` would refuse.
 
 5. Prune stale remote-tracking references:
    ```
    git fetch --prune
    ```
-   `gh pr merge` does not prune remote-tracking refs for the deleted branch, so this cleans up the orphaned `origin/<branch>` ref.
+   Cleans up the orphaned `origin/<head>` ref left behind by GitHub's remote deletion.
 
 If any step fails, stop and report the error rather than continuing.
