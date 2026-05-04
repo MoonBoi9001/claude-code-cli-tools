@@ -33,7 +33,7 @@ If the user supplied text after the slash command (e.g. `/load-prior-session foc
 
 Spawn a `general-purpose` subagent with the brief below. **Do not read the JSONL inline** — that puts the full transcript into this session's context, defeating the entire point.
 
-```bash
+```text
 You are summarising a Claude Code session JSONL for handoff into a fresh session.
 
 File: <absolute path to .jsonl>
@@ -41,39 +41,42 @@ Focus area (optional): <focus arg, or "balanced">
 
 Goal: produce a recap with HIGHER FIDELITY than another /compact pass would give. The user is invoking this precisely because /compact discards detail they need — so be generous with detail in the post-compact range. Do not re-summarise material that's already a summary.
 
-EXTRACTION STRATEGY — the file may be 50MB+, naively reading it will burn your context for no benefit.
+EXTRACTION STRATEGY — the file may be 50MB+, naively reading it will burn your context for no benefit. Phases below are numbered Phase 1-8 to avoid collision with the outer skill's Step 1-4.
 
-Step 1 — Skeleton:
+Phase 0 (hygiene) — clear stale artifacts so this run's outputs don't blend with a previous invocation:
+    rm -f /tmp/recap-*.jsonl /tmp/recap-*.txt
+
+Phase 1 — Skeleton:
     wc -l <file>
     jq 'select(.isCompactSummary == true)' <file> | wc -l
 
-Step 2 — If compaction summaries exist (count > 0):
+Phase 2 — If compaction summaries exist (count > 0):
     a. Find the line of the LAST compaction record:
          LAST=$(awk '/"isCompactSummary":true/ {n=NR} END {print n}' <file>)
     b. Read THAT record in full — this is your historical anchor (= /compact's view of everything before). Use it verbatim in the recap; don't re-summarise. **Verbatim means EVERY section, EVERY word.** Do NOT abbreviate, do NOT replace any section with `[list of N items — see transcript]`, do NOT condense long sections like "All user messages" into bullets. If the anchor is 15k characters, the verbatim quote in your recap is 15k characters. Length is not a problem; eliding the anchor is — section 6 ("All user messages") is the densest user-intent signal in the file and abbreviating it defeats the entire point of preserving the anchor.
     c. Slice everything after it:
          tail -n +$((LAST + 1)) <file> > /tmp/recap-post-compact.jsonl
-    d. Apply steps 3-6 below to /tmp/recap-post-compact.jsonl, NOT the original file.
+    d. Apply Phases 3-6 below to /tmp/recap-post-compact.jsonl, NOT the original file.
     e. Ignore earlier compaction summaries — they're superseded by the latest one.
 
-If no compaction summaries (count == 0): apply steps 3-6 directly to the original file.
+If no compaction summaries (count == 0): apply Phases 3-6 directly to the original file.
 
-Step 3 — Pull every user message verbatim. Cheap, dense, intent-carrying. Filter to string content to drop tool_result echoes, and skip operational noise types:
+Phase 3 — Pull every user message verbatim. Cheap, dense, intent-carrying. Filter to string content to drop tool_result echoes, and skip operational noise types:
     jq -c 'select(.type=="user" and .isSidechain==false and (.isMeta // false)==false and (.isCompactSummary // false)==false and (.message.content | type) == "string") | {ts: .timestamp, content: .message.content}' <working-file> > /tmp/recap-users.jsonl
 
-Noise types to skip wholesale (don't carry signal): `progress`, `queue-operation`, `api_error`, `turn_duration`, `stop_hook_summary`, `file-history-snapshot`, `attachment`, `permission-mode`, `last-prompt`, `pr-link`, `agent-name`, `custom-title`. Strip `<task-notification>` and `<system-reminder>` blocks from any user-message text you do extract — these are harness chatter, not user intent.
+Noise types to skip wholesale (don't carry signal): `progress`, `queue-operation`, `api_error`, `turn_duration`, `stop_hook_summary`, `file-history-snapshot`, `permission-mode`, `last-prompt`, `pr-link`, `agent-name`, `custom-title`. `attachment` is usually noise but can occasionally be load-bearing user input (pasted Slack threads, error logs the user dropped in) — skip by default but inspect if the user explicitly references one. Strip `<task-notification>` and `<system-reminder>` blocks from any user-message text you do extract — these are harness chatter, not user intent.
 
-Step 4 — Pull all assistant text blocks (skip tool_use):
+Phase 4 — Pull all assistant text blocks (skip tool_use):
     jq -c 'select(.type=="assistant" and .isSidechain==false) | {ts: .timestamp, text: ([.message.content[]? | select(.type=="text") | .text] | join("\n"))} | select(.text != "")' <working-file> > /tmp/recap-assistant.jsonl
 
-Step 5 — Pull tool calls (names + inputs only, no results). For very large ranges, grep down to git/docker/cargo/build/test:
+Phase 5 — Pull tool calls (names + inputs only, no results). For very large ranges, grep down to git/docker/cargo/build/test:
     jq -c 'select(.type=="assistant" and .isSidechain==false) | .message.content[]? | select(.type=="tool_use") | {name, input}' <working-file> > /tmp/recap-tools.jsonl
 
-Step 6 — Read the last ~30 records of <working-file> in full. This gives you the "I was about to..." state AND the session-end-reason: clean exit (assistant text was the last meaningful record), interrupted (an unresolved tool_use with no following tool_result), error cascade (multiple recent api_error records), or abandoned (user message with no following assistant response). Note the end reason in the recap so the new session knows whether to retry, resume, or proceed fresh.
+Phase 6 — Read the last ~30 records of <working-file> in full. This gives you the "I was about to..." state AND the session-end-reason: clean exit (assistant text was the last meaningful record), interrupted (an unresolved tool_use with no following tool_result), error cascade (multiple recent api_error records), or abandoned (user message with no following assistant response). Note the end reason in the recap so the new session knows whether to retry, resume, or proceed fresh.
 
-Step 7 — Sample tool results only on demand, when a specific gap requires it. Do NOT bulk-read tool results.
+Phase 7 — Sample tool results only on demand, when a specific gap requires it. Do NOT bulk-read tool results.
 
-Step 8 — Capture current workspace state. The recap describes what the prior session believed was true; the live repo may have moved. Run from the session's `cwd` (or the user's current cwd if matching):
+Phase 8 — Capture current workspace state. The recap describes what the prior session believed was true; the live repo may have moved. Run from the session's `cwd` (or the user's current cwd if matching):
 
     git -C <cwd> rev-parse --abbrev-ref HEAD
     git -C <cwd> status --short
@@ -84,7 +87,27 @@ Include the output as a "Current workspace state (at recap time)" section in the
 
 Budget: the skill's purpose is fidelity, not minimum cost. Don't sacrifice detail in the post-compact range to hit a tight number. But do keep raw transcripts out of context — work through jq filters to /tmp files, not wholesale Reads. Realistic cost for a heavily-loaded post-compact range: 200-300k tokens of subagent context. That's correct; the user is paying for fidelity.
 
-OUTPUT — structure the recap by **workstream**, not by topic taxonomy. Long sessions usually contain 2-5 distinct threads (a user might start debugging X, drift into a tooling fix Y, then start setting up Z). The new session does not yet know which thread the user wants to continue, so the recap must NOT collapse them into one narrative — that's exactly what `/compact` does and why it's lossy. Identify the threads from the user-message stream (look for topic shifts: new sub-goals, "actually let's...", changes in primary repo/file focus, distinct command families). Present each thread as its own section with: a short name; **every user message that falls in this thread's chronological range, quoted verbatim** (yes, every one — "yes", "sure", "okay", "nice" are signals of approval and direction; do NOT editorialise that they're "routine" and drop them; the test is "did the user type this?", not "do I think it's important?"); what was done in that thread (files, commands); what state it was left in. End with a single "session ended on thread X, in state Y" pointer. Do not editorialise about which thread was "the main one" — the user picks. Include the workspace state from step 8 as a "Current workspace state" section. Quote the latest compaction summary verbatim — every section, every word — as a separate "Pre-compaction history (verbatim /compact output)" section when one exists. If a focus arg was given, give that thread/area more depth. Aim for dense and useful; the reader is a fresh Claude session that needs to be productive on whichever thread the user names next.
+THREAD ASSIGNMENT (do this BEFORE writing any of the recap) — read /tmp/recap-users.jsonl in chronological order and decide on thread boundaries. Signals that mark a boundary:
+- A timestamp gap of >30 minutes between consecutive user messages (strong signal of context shift).
+- An "actually let's...", "next thing...", "switching to...", "instead of that..." preamble.
+- A change in primary repo or file focus (cross-check against /tmp/recap-tools.jsonl tool inputs).
+- A distinct command family (debugging vs editing vs deploy vs config).
+Write down the thread→message-index ranges as your plan before composing the recap. A long session typically has 2-5 threads.
+
+OUTPUT — structure the recap by workstream, not by topic taxonomy. The new session does not yet know which thread the user wants to continue, so the recap must NOT collapse them into one narrative — that's exactly what /compact does and why it's lossy. For EACH thread, produce a section containing:
+
+  1. **Short name** for the thread.
+  2. **Every user message in this thread, verbatim, chronological.** Yes, every one — "yes", "sure", "okay", "nice" are approval signals; do NOT editorialise that they're "routine" and drop them. The test is "did the user type this?", not "do I think it's important?". Pull these from /tmp/recap-users.jsonl filtered to this thread's time range.
+  3. **What was done in this thread.** Pull from /tmp/recap-assistant.jsonl (key reasoning excerpts) and /tmp/recap-tools.jsonl (tool calls). Embed bash commands and Edit/Write file paths verbatim — describing what code does in prose is the laziness pattern; quote the code instead.
+  4. **Errors + fixes** as an enumerated list (not narrative prose). Each entry: what went wrong, what the fix was, who caught it.
+  5. **State left in** — exact end-of-thread state.
+
+Then close with:
+  - **"Session ended on thread X, in state Y"** pointer (single line).
+  - **"Current workspace state"** section containing the Phase 8 git output verbatim, plus a one-sentence reconciliation note ("the X commits the recap claims unpushed are present locally as Y, Z, W — confirms the recap").
+  - When Phase 2 produced an anchor, a **"Pre-compaction history (verbatim /compact output)"** section at the end containing the anchor verbatim — every section, every word.
+
+Do not editorialise about which thread was "the main one" — the user picks. If a focus arg was given, give that thread extra depth. Aim for dense and useful; the reader is a fresh Claude session that needs to be productive on whichever thread the user names next.
 
 ANTI-LAZINESS, RESTATED: deterministic preservation beats model judgment on raw signal. /compact's section 6 dumps every user message regardless of importance — that's its strongest wins-on-volume feature. Our skill must do the same per thread, plus include code snippets verbatim when a load-bearing code change is described, plus include error→fix pairs as enumerated items rather than narrative prose. If you find yourself thinking "this user message is routine, I'll skip it" or "I'll just describe what the code does instead of quoting it" — stop. That's the laziness pattern. Quote it.
 ```
