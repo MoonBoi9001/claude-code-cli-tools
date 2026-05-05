@@ -8,6 +8,7 @@
 
 ## Rules
 
+- **Never merge or land a PR unless I have explicitly told you to in the current turn.** Never assume a PR is approved when I have not approved it. This applies to `gh pr merge`, the `/land-pr` skill, squash/rebase/merge commits, auto-merge flags, and any equivalent action. If you think a PR is ready, say so and wait — do not merge.
 - Every fix should address the immediate symptom and the underlying pattern — make the system robust against the same class of issue recurring
 - Never use emojis
 - Markdown documents, where possible, should read like a narrative, not a checklist
