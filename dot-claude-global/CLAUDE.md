@@ -30,8 +30,7 @@
 ### Commit Messages
 
 - Title: conventional commit format `type(scope): subject`, under 72 characters. Scope is required: exactly 1 word, no hyphens or slashes, specific enough to point at the right area, scope should not be ambiguous.
-- Body: 1-4 lines max, wrap at 72 characters. State what the commit *does* and *why*, not a full essay. Save detailed context for the PR body. If the change can't be explained in 4 lines, split it into multiple commits.
-- Build the body from context to action: open with the situation (what exists, what's broken or missing), then describe what the commit changes. Each sentence should set up the next, so a reader without prior context — think 3 a.m., unfamiliar repo — can follow without needing to look anything up.
+- Body: as short as the change allows, up to 4 lines, wrapped at 72 characters. The test for whether a body is good is whether someone who doesn't read the codebase (or even the language) could read it and explain to a third person, in their own words, what the commit does and why. For trivial mechanical fixes a single sentence is often enough. When the title alone wouldn't let a non-engineer reason about the change, build the body from context to action — open with the situation (what exists, what's broken or missing), then describe the change. If the change can't be explained in 4 lines, split it into multiple commits.
 - Trailers (e.g. `Co-Authored-By:`) live below a blank line after the body and don't count against the 4-line limit
 - Never restate the title in the body
 
