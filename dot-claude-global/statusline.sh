@@ -250,7 +250,7 @@ effort_level=""
 
 # 1. Statusline JSON input (future-proof if Anthropic adds it)
 if [ "$HAS_JQ" -eq 1 ]; then
-  effort_level=$(echo "$input" | jq -r '.effort // empty' 2>/dev/null)
+  effort_level=$(echo "$input" | jq -r 'if (.effort | type) == "object" then (.effort.level // empty) else (.effort // empty) end' 2>/dev/null)
 fi
 
 # 2. Parse session JSONL for most recent effort change (~26ms)
@@ -276,7 +276,7 @@ for line in sys.stdin:
     except: pass
 print(effort)
 " 2>/dev/null)
-  case "$effort_level" in low|medium|high|max|auto) ;; *) effort_level="" ;; esac
+  case "$effort_level" in low|medium|high|xhigh|max|auto) ;; *) effort_level="" ;; esac
 fi
 
 # 3. Read configured default from settings.json
