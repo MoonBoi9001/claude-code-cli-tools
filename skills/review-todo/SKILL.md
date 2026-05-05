@@ -27,7 +27,7 @@ Group items into three sections, in this order, each as a bold top-level heading
 
 Decisions go first so the user can answer the questions in one pass, then work straight through the rest. If a section has no items, omit the heading entirely rather than leave it empty.
 
-Number items continuously across sections (1, 2, 3, … — do not restart at each heading). Within each section, keep the review's original order. One short sentence per item description, soft cap of about 20 words. **Fixes** and **Polish** items are description-only — no sub-bullets, no nesting. **Decisions needed** items carry an additional `→ Question?` block (and optionally lettered choices) below the description, as detailed in the next section. No preamble before the first heading, no closing remarks.
+Number items continuously across sections (1, 2, 3, … — do not restart at each heading), and bold the number marker so each item reads as its own sub-heading (`**1.**`, `**2.**`, …). The bold applies only to the marker — the description, the `→` line, and the lettered choices stay in regular weight. Separate every item from the next with a blank line. This matters most when a decision item's lettered choices end immediately before the following item's description: without a blank line the two collide visually and the eye loses the boundary. Within each section, keep the review's original order. One short sentence per item description, soft cap of about 20 words. **Fixes** and **Polish** items are description-only — no sub-bullets, no nesting. **Decisions needed** items carry an additional `→ Question?` block (and optionally lettered choices) below the description, as detailed in the next section. No preamble before the first heading, no closing remarks.
 
 **Lead each item with prose, not metadata.** The first few words are what the user's eye lands on when skimming, so they should describe the problem, not the location. Start with a natural article or verb — "The retry loop…", "Each source file…", "Add a test…" — never with a bare file path or a bare noun phrase. "Retry loop has no cap" is one word away from "The retry loop has no cap" and the second is meaningfully easier to read.
 
@@ -35,12 +35,16 @@ Number items continuously across sections (1, 2, 3, … — do not restart at ea
 
 ```
 **Fixes**
-3. Add a test for the `--dry-run --daemon` combo so a future guard change can't silently break it (compact.py).
-4. The `safe=False` cast invariant is only doc-pinned — add a guard or test that fails if a non-null promotion path is added (compact.py:`_resolve_field_type`).
+
+**3.** Add a test for the `--dry-run --daemon` combo so a future guard change can't silently break it (compact.py).
+
+**4.** The `safe=False` cast invariant is only doc-pinned — add a guard or test that fails if a non-null promotion path is added (compact.py:`_resolve_field_type`).
 
 **Polish**
-6. Each source file is opened twice (schema read, then table read) — cache schemas if first-backfill latency matters (compact.py:`_unify_schemas`).
-7. The verify step trusts non-timestamp columns blindly — only timestamp min/max round-trips (compact.py:`_verify_compacted`).
+
+**6.** Each source file is opened twice (schema read, then table read) — cache schemas if first-backfill latency matters (compact.py:`_unify_schemas`).
+
+**7.** The verify step trusts non-timestamp columns blindly — only timestamp min/max round-trips (compact.py:`_verify_compacted`).
 ```
 
 ## Items that need a decision before they can be fixed
@@ -53,20 +57,21 @@ When the reviewer named two or more discrete alternatives, list them as lettered
 
 ```
 **Decisions needed**
-1. The retry loop has no cap or escalation — one bad date logs WARNING hourly forever (compact.py:`_run_sweep_safely`).
+
+**1.** The retry loop has no cap or escalation — one bad date logs WARNING hourly forever (compact.py:`_run_sweep_safely`).
 
    → Cap with backoff, escalate to ERROR for ntfy, or quarantine the bad date?
      a. cap retries with exponential backoff  *(recommended)*
      b. escalate to ERROR and route to ntfy
      c. quarantine the bad date and continue
 
-2. The compactor's 4 AM ET wake-up time is documented in three places (compact.py + docker-compose.yml + SKILL.md).
+**2.** The compactor's 4 AM ET wake-up time is documented in three places (compact.py + docker-compose.yml + SKILL.md).
 
    → Pass `--target-hour` from compose for a single source of truth, or accept the duplication?
      a. plumb `--target-hour` through compose
      b. accept the duplication and add a comment in each place
 
-3. The new `GRT_MIN_STAKE` env var landed in the gateway config but reviewer thinks it's misplaced (config/gateway.yaml:31).
+**3.** The new `GRT_MIN_STAKE` env var landed in the gateway config but reviewer thinks it's misplaced (config/gateway.yaml:31).
 
    → Which service owns this setting?
 ```
@@ -82,6 +87,8 @@ A finding where the reviewer already recommended a specific fix is *not* a decis
 - Do not lead an item with a file path or a bare noun. Add a natural article or verb so the eye lands on the problem.
 - Do not inline the question on the same line as the item description — drop to a new line and lead with `→ `.
 - Do not number the lettered choices (`1.`, `2.`) — use letters (`a.`, `b.`) so they cannot be confused with the parent item number.
+- Do not omit the bold on a number marker — every numbered item leads with `**N.**`. The lettered choices stay in regular weight; only the parent marker is bolded.
+- Do not pack items together without a blank line between them. A decision item whose lettered choices end immediately before the next item's description is the most common offender — leave a blank line before the next `**N.**`.
 
 ## Edge cases
 
