@@ -15,6 +15,7 @@
 - Never make unverified claims or state facts disproportionate to the truth. Surgical accuracy, not overblown hype.
 - Keep ALL data and numbers intact when rewriting or summarising.
 - Write like explaining to a colleague: use transitional phrases, keep technical detail in prose form, prefer minimalist language (e.g. "adapted" not "carefully adapted"). Avoid robotic formatting and repetitive word choices.
+- Prefer plain English over engineering jargon — write so a non-engineer collaborator (PM, designer) could follow. "Prevent X" over "gate X", "rename Y" over "alias Y", "skip when Z" over "short-circuit on Z". Applies everywhere: commit messages, PR bodies, code comments, chat replies.
 - If I ask you a question and you are not 100% sure, please let me know that you're not sure rather than stating something that could be wrong
 - When working with git operations, always confirm the current working directory before running commands, especially after subshell operations or package installs
 - When analyzing systems or services, be exhaustive — list ALL relevant components. Do not omit services unless explicitly told to scope down
@@ -30,6 +31,7 @@
 ### Commit Messages
 
 - Title: conventional commit format `type(scope): subject`, under 72 characters. Scope is required: exactly 1 word, no hyphens or slashes, specific enough to point at the right area, scope should not be ambiguous.
+- Subject after `type(scope):` reads as completing "If applied, this commit will…" — start with an imperative verb that names the specific action (extract, simplify, prevent, batch, drop, rename), not one that just restates the type (`fix(api): fix X`, `refactor(core): refactor Y`). Good: `fix(api): prevent infinite retry loop when downstream returns 429s`, `refactor(core): extract retry helper used by three near-identical callers`. Use plain English, not engineering jargon (e.g. "prevent" over "gate").
 - Body: as short as the change allows, up to 4 lines, wrapped at 72 characters. The test for whether a body is good is whether someone who doesn't read the codebase (or even the language) could read it and explain to a third person, in their own words, what the commit does and why. For trivial mechanical fixes a single sentence is often enough. When the title alone wouldn't let a non-engineer reason about the change, build the body from context to action — open with the situation (what exists, what's broken or missing), then describe the change. If the change can't be explained in 4 lines, split it into multiple commits.
 - Trailers (e.g. `Co-Authored-By:`) live below a blank line after the body and don't count against the 4-line limit
 - Never restate the title in the body
@@ -85,7 +87,7 @@ The motivation orients the reader before they look at any code. Write it for two
 
 #### Summary and Changes sections
 
-The summary is a concise list of what the PR actually does. Keep it to bullet points — the narrative belongs in the motivation, not here. Each bullet point should contain a sentence with less than 100 characters.
+The summary is a concise list of what the PR actually does. Keep it to bullet points — the narrative belongs in the motivation, not here. Each bullet point should contain a sentence with less than 100 characters. Same plain-English standard as the rest of the body — no file paths, function names, or engineering jargon.
 
 ## Memories
 
