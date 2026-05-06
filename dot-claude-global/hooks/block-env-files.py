@@ -113,6 +113,27 @@ SAFE_PATTERNS = [
     r"\.env\.template$",
 ]
 
+# Directories where .env access is explicitly allowed (user-trusted projects).
+# Only applies to file tools (Read/Write/Edit/Glob/Grep). Bash patterns stay
+# conservative across the board.
+ALLOWED_ENV_DIRS = [
+    str(Path.home() / "Documents/github/local-network"),
+]
+
+
+def path_in_allowed_env_dir(path: str) -> bool:
+    """True if the path resolves to somewhere inside an allowed-env directory."""
+    if not path:
+        return False
+    resolved = resolve_path(path) or path
+    abs_path = os.path.abspath(os.path.normpath(resolved))
+    for allowed in ALLOWED_ENV_DIRS:
+        allowed_abs = os.path.abspath(allowed)
+        if abs_path == allowed_abs or abs_path.startswith(allowed_abs + os.sep):
+            return True
+    return False
+
+
 # Commands that can read file contents
 FILE_READ_COMMANDS = [
     "cat",
@@ -226,6 +247,10 @@ def is_sensitive_file(path: str) -> bool:
     for pattern in SAFE_PATTERNS:
         if re.search(pattern, path, re.IGNORECASE):
             return False
+
+    # Allow .env access inside user-trusted project directories
+    if path_in_allowed_env_dir(path):
+        return False
 
     # Check all path variants
     resolved = resolve_path(path) or path
