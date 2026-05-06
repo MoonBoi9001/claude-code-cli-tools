@@ -18,7 +18,9 @@ Coverage:
 
 Known limitations (lean-allow):
   - Pathological shell escaping or nested heredocs fall through.
-  - `git c` (alias) isn't recognised — only literal `git commit` is matched.
+  - `git c` (aliases) aren't recognised — `git commit` (with optional
+    global flags like `-C <path>`, `-c name=val`, `--no-pager`, etc.)
+    is what we match.
   - Body lines that look like trailers (`Fixes: x`) after a blank line ARE
     stripped as trailers, matching git's own trailer semantics.
 
@@ -51,6 +53,19 @@ CONVENTIONAL_TYPES = (
 )
 CONVENTIONAL_TITLE_RE = re.compile(
     r"^(" + "|".join(CONVENTIONAL_TYPES) + r")\([a-z0-9]+\)!?: .+$"
+)
+
+# Detect `git [global flags] commit`. The earlier `\bgit\s+commit\b` form
+# missed `git -C <path> commit` (and other global-flag prefixes) entirely,
+# silently letting any commit invoked that way bypass validation. Allows
+# zero or more flag tokens between `git` and `commit`:
+#   - `-C <path>` / `-c <name>=<value>`           (`-[Cc]\s+\S+`)
+#   - bundled or single-letter flags like `-p`    (`-[A-Za-z]+`)
+#   - long flags `--name`, `--name=value`         (`--[\w-]+(?:=\S+)?`)
+GIT_COMMIT_RE = re.compile(
+    r"\bgit"
+    r"(?:\s+(?:-[Cc]\s+\S+|-[A-Za-z]+|--[\w-]+(?:=\S+)?))*"
+    r"\s+commit\b"
 )
 
 # A git trailer is a `Token: value` pair where Token uses Title-Case-With-Hyphens.
@@ -218,7 +233,7 @@ def main() -> None:
     # a heredoc body (e.g. test scripts piping Python with git references)
     # would otherwise self-trigger.
     invocation = cmd.split("\n", 1)[0]
-    if not re.search(r"\bgit\s+commit\b", invocation):
+    if not GIT_COMMIT_RE.search(invocation):
         pass_through()
     # --amend --no-edit reuses the prior message; nothing to validate.
     if is_amend_no_edit(cmd):
@@ -232,7 +247,19 @@ def main() -> None:
     errors = validate(msg)
     if errors:
         bullet = "\n  - ".join(errors)
-        deny("Commit message rejected:\n  - " + bullet)
+        reminders = (
+            "\n\nReminders for the rewrite (~/.claude/CLAUDE.md):\n"
+            '  - Title reads as completing "If applied, this commit '
+            'will…" — lead with an imperative verb (extract, simplify, '
+            "prevent), not the type itself. Plain English, not jargon "
+            '("prevent" over "gate", "rename" over "alias").\n'
+            '  - Body stands on its own. No references to "the original '
+            'X bug" or "after the Y refactor" without inlining the '
+            "context; no function names or internal jargon. A reader who "
+            "has never seen this codebase should be able to follow.\n"
+            "  - Don't restate the title in the body."
+        )
+        deny("Commit message rejected:\n  - " + bullet + reminders)
 
     pass_through()
 

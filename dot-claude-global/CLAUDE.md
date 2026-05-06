@@ -28,6 +28,10 @@
 
 ## Git Workflow
 
+### Self-contained messages
+
+Every commit message and PR body MUST stand on its own. Readers should not need outside context — prior conversations, other commits, internal lore, codebase knowledge — to understand what the change does and why. Cross-references ("the original X bug", "after the Y refactor") are forbidden unless the surrounding context is inlined; internal jargon ("the planner picked a query shape that hid the bug", "snapshot-pinned subgraph block") must be explained in plain language or replaced. Test by reading your draft as if you'd never seen this codebase: if any sentence makes you ask "wait, what is X?", add context, rewrite, or split the change.
+
 ### Commit Messages
 
 - Title: conventional commit format `type(scope): subject`, under 72 characters. Scope is required: exactly 1 word, no hyphens or slashes, specific enough to point at the right area, scope should not be ambiguous.
