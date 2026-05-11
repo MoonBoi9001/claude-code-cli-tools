@@ -72,6 +72,16 @@ GIT_COMMIT_RE = re.compile(
 # Examples: Co-Authored-By, Signed-off-by, Reviewed-by, Fixes.
 TRAILER_RE = re.compile(r"^[A-Z][A-Za-z]*(-[A-Za-z]+)*:\s.+$")
 
+# Match a heredoc block (the `<<TAG ... TAG` form with all four opening
+# variants: `<<TAG`, `<<'TAG'`, `<<"TAG"`, `<<-TAG`). Used to strip heredoc
+# bodies before searching for `git commit`: a test script body containing
+# the literal string `git commit` must not self-trigger, but a real
+# `git commit` invocation on a line after a heredoc must still be caught.
+HEREDOC_BODY_RE = re.compile(
+    r"<<-?\s*['\"]?(\w+)['\"]?\s*\n.*?\n\1\b",
+    re.DOTALL,
+)
+
 MAX_TITLE = 72
 MAX_BODY_LINES = 4
 MAX_BODY_LINE = 72
@@ -229,11 +239,14 @@ def main() -> None:
         pass_through()
 
     cmd = inp.get_input("command", "")
-    # Only inspect the invocation line itself; `git commit` substrings inside
-    # a heredoc body (e.g. test scripts piping Python with git references)
-    # would otherwise self-trigger.
-    invocation = cmd.split("\n", 1)[0]
-    if not GIT_COMMIT_RE.search(invocation):
+    # Strip heredoc bodies before searching: a `git commit` substring inside
+    # a heredoc body (e.g. a test script being cat'd to disk) must not
+    # self-trigger, but a real `git commit` invocation on a line other than
+    # the first must. The earlier `cmd.split("\n", 1)[0]` defense missed the
+    # very common `cat > /tmp/msg <<EOF ... EOF \n git commit -F /tmp/msg`
+    # pattern entirely — line 1 was just the heredoc opener.
+    sanitized = HEREDOC_BODY_RE.sub("", cmd)
+    if not GIT_COMMIT_RE.search(sanitized):
         pass_through()
     # --amend --no-edit reuses the prior message; nothing to validate.
     if is_amend_no_edit(cmd):
