@@ -1,6 +1,6 @@
 ---
-name: review-pr
-description: "Review a GitHub PR with a team of specialized agents covering architecture, correctness, security, tests, code quality, and integration. Use when the user asks to 'review a PR', 'review this PR', 'code review PR 1234', 'review PR #1234', 'what do you think of this PR', or pastes a GitHub PR URL and asks for feedback. Also trigger when the user says 'review' followed by a PR number."
+name: deep-review
+description: "Run a deep multi-agent review of a GitHub PR — 6 specialized agents covering architecture, correctness, security, tests, code quality, and integration. ONLY trigger when the user's message contains the explicit phrase 'deep review' (e.g. 'deep review this PR', 'deep review PR #1234', 'do a deep review of 1234', '/deep-review'). Do NOT trigger on bare 'review', 'review this', 'review the PR', 'code review', 'what do you think of this PR', or pasted PR URLs without 'deep review' in the message — those are handled by the lighter /review skill. The literal phrase 'deep review' must appear in the user's message; absence of that phrase means do not invoke this skill."
 argument-hint: "<PR number or URL>"
 allowed-tools:
   - Bash
@@ -12,9 +12,9 @@ allowed-tools:
   - Edit
 ---
 
-# Review PR
+# Deep Review
 
-Review a GitHub PR using 6 specialized agents in parallel, then consolidate and verify findings before presenting to the user.
+Run a deep multi-agent review of a GitHub PR using 6 specialized agents in parallel, then consolidate and verify findings before presenting to the user. This is the heavyweight option — only run when the user explicitly asks for a "deep review."
 
 ## Why this skill exists
 
