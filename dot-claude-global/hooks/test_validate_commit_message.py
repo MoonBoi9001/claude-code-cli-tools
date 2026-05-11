@@ -85,6 +85,69 @@ class TestGitCommitDetection(unittest.TestCase):
         self.assertEqual(proc.returncode, 2, proc.stderr)
 
 
+class TestHeredocPatterns(unittest.TestCase):
+    """Multi-line commands with heredocs.
+
+    The agent's standard pattern for long commit messages is:
+        cat > /tmp/msg.txt <<EOF
+        <message>
+        EOF
+        git commit -F /tmp/msg.txt
+
+    Line 1 is the heredoc opener, not `git commit`. The earlier hook
+    inspected only line 1 and silently passed through every commit issued
+    this way. The new hook strips heredoc bodies and searches the rest.
+    """
+
+    def test_heredoc_to_file_then_commit_F_is_recognised(self):
+        # Real-world bypass: heredoc writes the message to disk, git
+        # commit reads it back. `git commit` lives on line 5.
+        bad = "fix(scope): too long\n\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6"
+        cmd = f"cat > /tmp/msg.txt <<'EOF'\n{bad}\nEOF\ngit commit -F /tmp/msg.txt"
+        proc = run_hook(cmd)
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertIn("Body has 6 non-empty lines", proc.stderr)
+
+    def test_setup_chain_then_commit_on_later_line_recognised(self):
+        # `git status` first, real commit on line 2. No heredoc.
+        proc = run_hook(f'git status\ngit commit -m "{SIX_LINE_BAD_BODY}"')
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+
+    def test_git_commit_inside_heredoc_body_passes_through(self):
+        # The defense the original line-1 restriction was protecting:
+        # writing a shell script that contains the literal `git commit`
+        # must not trigger validation, because no commit is happening.
+        cmd = (
+            "cat > /tmp/script.sh <<'EOF'\n"
+            'git commit -m "this is a test fixture, not a real commit"\n'
+            "EOF\n"
+            "echo wrote script"
+        )
+        proc = run_hook(cmd)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_heredoc_substitution_form_message_is_extracted(self):
+        # The CLAUDE.md canonical pattern: heredoc inside -m "$(cat <<EOF
+        # ... EOF)". The heredoc IS the message; extraction must find it.
+        cmd = (
+            "git commit -m \"$(cat <<'EOF'\n"
+            "fix(scope): too long\n\n"
+            "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\n"
+            "EOF\n"
+            ')"'
+        )
+        proc = run_hook(cmd)
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+        self.assertIn("Body has 6 non-empty lines", proc.stderr)
+
+    def test_indented_heredoc_dash_form_recognised(self):
+        # `<<-EOF` strips leading tabs; still a heredoc.
+        bad = "fix(scope): too long\n\nLine 1\nLine 2\nLine 3\nLine 4\nLine 5"
+        cmd = f"cat > /tmp/msg.txt <<-EOF\n{bad}\nEOF\ngit commit -F /tmp/msg.txt"
+        proc = run_hook(cmd)
+        self.assertEqual(proc.returncode, 2, proc.stderr)
+
+
 class TestNonCommitInvocations(unittest.TestCase):
     """Anything that isn't `git commit` must pass through (exit 0)."""
 
